@@ -181,37 +181,70 @@ const statusChip: Record<string, string> = {
       ))}
     </nav>
 
-    <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_18rem]">
-      <div>
-        {tab === "details" && <DetailsTab {product} {editable} creatorName={guard.creator.display_name} />}
-        {tab === "lessons" && <LessonsTab {product} lessons={lessons ?? []} {editable} />}
-      {tab === "preview" && (
-        <div class="rounded border border-brand-line bg-brand-panel p-6">
-          <p class="text-sm text-brand-silver">
-            A watermarked draft preview of your public product page opens in a new tab.
-          </p>
-          <a href={`/creator/products/${product.id}/preview/`} target="_blank" class="btn-primary mt-4 inline-block">Open Draft Preview</a>
+    {/* Details: form on the left, live product-page preview on the right so
+        creators see exactly where each field lands on their public page. */}
+    {tab === "details" ? (
+      <div class="mt-8 grid items-start gap-8 xl:grid-cols-2">
+        <div>
+          <DetailsTab {product} {editable} creatorName={guard.creator.display_name} />
         </div>
-      )}
-        {tab === "submit" && <SubmitTab {product} lessons={lessons ?? []} {submission} />}
-      </div>
 
-      <!-- Live marketplace card preview (updates as Details fields change) -->
-      <aside class="lg:sticky lg:top-8 lg:self-start">
-        <div class="text-[10px] font-bold uppercase tracking-widest text-brand-silver">Marketplace card preview</div>
-        <div id="card-preview" class="mt-3">
-          {previewEntry ? (
-            <EbookCard ebook={previewEntry} />
-          ) : (
-            <p class="text-xs text-brand-silver">Save details to see your card.</p>
+        <aside class="xl:sticky xl:top-8 xl:self-start">
+          <div class="text-[10px] font-bold uppercase tracking-widest text-brand-silver">Product page preview — live</div>
+          <div class="mt-3 overflow-hidden border border-brand-line bg-brand-black" style="height: 72vh;">
+            <iframe
+              id="page-preview-frame"
+              src={`/creator/products/${product.id}/preview/?embed=1`}
+              title="Product page preview"
+              style="width: 200%; height: 200%; transform: scale(0.5); transform-origin: top left; border: 0;"
+            ></iframe>
+          </div>
+          <p class="mt-2 text-[11px] leading-relaxed text-brand-silver">
+            This is your public ebook page, updating live as you type — save to
+            persist. Scroll inside the preview to see the whole page. Cover and
+            lesson changes appear after saving.
+          </p>
+
+          <div class="mt-6 text-[10px] font-bold uppercase tracking-widest text-brand-silver">Marketplace card preview</div>
+          <div id="card-preview" class="mt-3 max-w-xs">
+            {previewEntry ? (
+              <EbookCard ebook={previewEntry} />
+            ) : (
+              <p class="text-xs text-brand-silver">Save details to see your card.</p>
+            )}
+          </div>
+        </aside>
+      </div>
+    ) : (
+      <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_18rem]">
+        <div>
+          {tab === "lessons" && <LessonsTab {product} lessons={lessons ?? []} {editable} />}
+          {tab === "preview" && (
+            <div class="rounded border border-brand-line bg-brand-panel p-6">
+              <p class="text-sm text-brand-silver">
+                A watermarked draft preview of your public product page opens in a new tab.
+              </p>
+              <a href={`/creator/products/${product.id}/preview/`} target="_blank" class="btn-primary mt-4 inline-block">Open Draft Preview</a>
+            </div>
           )}
+          {tab === "submit" && <SubmitTab {product} lessons={lessons ?? []} {submission} />}
         </div>
-        <p class="mt-3 text-[11px] leading-relaxed text-brand-silver">
-          This is how your ebook appears on the marketplace. It updates live as you
-          edit — save to persist.
-        </p>
-      </aside>
-    </div>
+
+        <aside class="lg:sticky lg:top-8 lg:self-start">
+          <div class="text-[10px] font-bold uppercase tracking-widest text-brand-silver">Marketplace card preview</div>
+          <div class="mt-3">
+            {previewEntry ? (
+              <EbookCard ebook={previewEntry} />
+            ) : (
+              <p class="text-xs text-brand-silver">Save details to see your card.</p>
+            )}
+          </div>
+          <p class="mt-3 text-[11px] leading-relaxed text-brand-silver">
+            This is how your ebook appears on the marketplace.
+          </p>
+        </aside>
+      </div>
+    )}
   </section>
 
   <!-- #5 Live preview: mirror Details edits onto the card without a round-trip. -->
@@ -239,6 +272,38 @@ const statusChip: Record<string, string> = {
         el.addEventListener("change", update);
       }
       document.querySelectorAll("[data-preview]").forEach(bind);
+    })();
+  </script>
+
+  <!-- Live product-page preview: post every Details edit into the iframe. -->
+  <script is:inline>
+    (function () {
+      const frame = document.getElementById("page-preview-frame");
+      if (!frame) return;
+      const FIELDS = {
+        title: "title",
+        author_name: "author",
+        short_description: "shortDescription",
+        full_description: "overview",
+        category: "category",
+        difficulty: "difficulty",
+        playbook: "playbook",
+        formation: "formation",
+        price: "price",
+        what_you_will_learn: "wywl",
+        who_this_is_for: "wtif",
+      };
+      function send(field, value) {
+        if (!frame.contentWindow) return;
+        frame.contentWindow.postMessage({ type: "ttp-preview", field, value }, window.location.origin);
+      }
+      Object.entries(FIELDS).forEach(([inputId, field]) => {
+        const el = document.getElementById(inputId);
+        if (!el) return;
+        const update = () => send(field, el.value);
+        el.addEventListener("input", update);
+        el.addEventListener("change", update);
+      });
     })();
   </script>
 </BaseLayout>

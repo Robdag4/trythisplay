@@ -15,11 +15,110 @@ if (!guard.ok) {
 
 const ebook = await getProductByIdAdmin(id!);
 if (!ebook || ebook.data.creatorId !== guard.creator.id) return Astro.redirect("/creator/");
+
+// Embedded mode (?embed=1): rendered inside the Details-tab iframe. Hides the
+// draft banner and listens for live field updates posted from the editor form.
+const embed = Astro.url.searchParams.get("embed") === "1";
 ---
 
-<div class="fixed left-0 right-0 top-0 z-50 bg-brand-red px-4 py-2 text-center text-xs font-bold uppercase tracking-widest text-white">
-  Draft preview — not live · <a href={`/creator/products/${id}/`} class="underline">back to editor</a>
-</div>
-<div class="pt-9">
+{!embed && (
+  <div class="fixed left-0 right-0 top-0 z-50 bg-brand-red px-4 py-2 text-center text-xs font-bold uppercase tracking-widest text-white">
+    Draft preview — not live · <a href={`/creator/products/${id}/`} class="underline">back to editor</a>
+  </div>
+)}
+<div class={embed ? "" : "pt-9"}>
   <ProductPage {ebook} draftPreview={true} />
 </div>
+
+{embed && (
+  <script is:inline>
+    // Live mirror: apply field updates sent by the editor. Same-origin only.
+    (function () {
+      const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+      const money = (v) => {
+        const n = parseFloat(v || "0");
+        return isNaN(n) ? "" : "$" + n.toFixed(2);
+      };
+      const setText = (sel, v) =>
+        document.querySelectorAll(sel).forEach((el) => { el.textContent = v; });
+      const setWrap = (key, show) =>
+        document.querySelectorAll('[data-page-wrap="' + key + '"]').forEach((el) =>
+          el.classList.toggle("hidden", !show)
+        );
+
+      function setList(key, value) {
+        const items = value.split("\n").map((s) => s.trim()).filter(Boolean);
+        setWrap(key, items.length > 0);
+        document.querySelectorAll('[data-page="' + key + '-list"]').forEach((ul) => {
+          ul.innerHTML = "";
+          items.forEach((item) => {
+            const li = document.createElement("li");
+            li.className = "flex items-start gap-2 text-sm text-brand-silver";
+            const dot = document.createElement("span");
+            dot.className = "mt-1.5 h-1.5 w-1.5 shrink-0 bg-brand-red";
+            dot.setAttribute("aria-hidden", "true");
+            li.appendChild(dot);
+            li.appendChild(document.createTextNode(item));
+            ul.appendChild(li);
+          });
+        });
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.origin !== window.location.origin) return;
+        const msg = event.data;
+        if (!msg || msg.type !== "ttp-preview") return;
+        const v = String(msg.value ?? "");
+        switch (msg.field) {
+          case "title":
+            setText('[data-page="title"]', v);
+            setText('[data-page="cover-title"]', v);
+            break;
+          case "author":
+            setText('[data-page="author"]', v);
+            break;
+          case "shortDescription":
+            setText('[data-page="shortDescription"]', v);
+            break;
+          case "category":
+            setText('[data-page="category"]', cap(v));
+            break;
+          case "difficulty":
+            setText('[data-page="difficulty"]', cap(v));
+            break;
+          case "playbook":
+            setWrap("playbook", !!v.trim());
+            setText('[data-page="playbook"]', v);
+            break;
+          case "formation":
+            setWrap("formation", !!v.trim());
+            setText('[data-page="formation"]', v);
+            break;
+          case "price":
+            setText('[data-page="price"]', money(v));
+            break;
+          case "wywl":
+            setList("wywl", v);
+            break;
+          case "wtif":
+            setList("wtif", v);
+            break;
+          case "overview": {
+            // Simple paragraph rendering while typing; the saved version
+            // renders full markdown server-side.
+            document.querySelectorAll('[data-page="overview"]').forEach((el) => {
+              el.innerHTML = "";
+              v.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean).forEach((p) => {
+                const node = document.createElement("p");
+                node.className = "mt-4";
+                node.textContent = p;
+                el.appendChild(node);
+              });
+            });
+            break;
+          }
+        }
+      });
+    })();
+  </script>
+)}
