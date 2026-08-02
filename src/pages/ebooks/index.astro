@@ -1,12 +1,15 @@
 ---
-import { getCollection } from "astro:content";
+// Server-rendered: reads the published catalog from the DB (Phase 3 switchover).
+export const prerender = false;
+
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
 import EbookCard from "../../components/ebooks/EbookCard.astro";
 import SectionHeading from "../../components/ui/SectionHeading.astro";
 import { EBOOK_CATEGORIES } from "../../data/site";
+import { getPublishedProducts } from "../../lib/products";
 
-const ebooks = await getCollection("ebooks");
+const ebooks = await getPublishedProducts();
 ---
 
 <BaseLayout

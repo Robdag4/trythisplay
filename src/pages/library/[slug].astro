@@ -1,7 +1,7 @@
 ---
-import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getUser } from "../../lib/auth";
+import { getEntitledProductsBySlug } from "../../lib/products";
 
 export const prerender = false;
 
@@ -19,8 +19,9 @@ const { data: purchase } = await supabase
   .maybeSingle();
 if (!purchase) return Astro.redirect("/library/");
 
-const ebooks = await getCollection("ebooks");
-const ebook = ebooks.find((e) => e.slug === slug);
+// Entitlement verified above; fetch the product regardless of status.
+const byslug = await getEntitledProductsBySlug([slug!]);
+const ebook = byslug.get(slug!) ?? null;
 if (!ebook) return Astro.redirect("/library/");
 
 const { data: progressRows } = await supabase

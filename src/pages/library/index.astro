@@ -1,9 +1,9 @@
 ---
-import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SectionHeading from "../../components/ui/SectionHeading.astro";
 import { getUser } from "../../lib/auth";
 import { formatDate } from "../../lib/format";
+import { getEntitledProductsBySlug } from "../../lib/products";
 
 export const prerender = false;
 
@@ -20,9 +20,13 @@ const { data: progress } = await supabase
   .from("lesson_progress")
   .select("product_slug, lesson_index");
 
-const ebooks = await getCollection("ebooks");
+// Entitlement already verified above (completed purchases). Fetch those products
+// regardless of current status so owners keep access to archived items.
+const byslug = await getEntitledProductsBySlug(
+  (purchases ?? []).map((p) => p.product_slug)
+);
 const owned = (purchases ?? []).map((p) => {
-  const ebook = ebooks.find((e) => e.slug === p.product_slug);
+  const ebook = byslug.get(p.product_slug) ?? null;
   const total = ebook?.data.lessons.length ?? 0;
   const done = (progress ?? []).filter((x) => x.product_slug === p.product_slug).length;
   return { ...p, ebook, total, done };

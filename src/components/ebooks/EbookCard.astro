@@ -1,10 +1,10 @@
 ---
-import type { CollectionEntry } from "astro:content";
+import type { ProductEntry } from "../../lib/products";
 import UpdatedBadge from "../ui/UpdatedBadge.astro";
 import { formatPrice, capitalize } from "../../lib/format";
 
 interface Props {
-  ebook: CollectionEntry<"ebooks">;
+  ebook: ProductEntry;
 }
 
 const { ebook } = Astro.props;

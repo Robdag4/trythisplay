@@ -1,19 +1,23 @@
 ---
+// Server-rendered: creator profile copy still comes from the content collection
+// (public profiles until real creators exist), but the published-product listing
+// reads from the DB (Phase 3).
+export const prerender = false;
+
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
 import EbookCard from "../../components/ebooks/EbookCard.astro";
+import { getPublishedProductsByCreator } from "../../lib/products";
 
-export async function getStaticPaths() {
-  const creators = await getCollection("creators");
-  return creators.map((creator) => ({ params: { slug: creator.slug }, props: { creator } }));
-}
-
-const { creator } = Astro.props;
+const { slug } = Astro.params;
+const creators = await getCollection("creators");
+const creator = creators.find((c) => c.slug === slug);
+if (!creator) return Astro.redirect("/404/", 404);
 const { data } = creator;
 
-const allEbooks = await getCollection("ebooks");
-const ebooks = allEbooks.filter((e) => e.data.creatorId === creator.slug);
+// Match products either by the creator's DB id or by profile slug (transitional).
+const ebooks = await getPublishedProductsByCreator(creator.slug);
 
 const schema = {
   "@context": "https://schema.org",

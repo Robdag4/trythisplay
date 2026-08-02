@@ -1,18 +1,21 @@
 ---
-import type { CollectionEntry } from "astro:content";
+import type { ProductEntry } from "../../lib/products";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../ui/Breadcrumbs.astro";
 import UpdatedBadge from "../ui/UpdatedBadge.astro";
 import ProductSchema from "../seo/ProductSchema.astro";
 import { formatPrice, formatDate, capitalize } from "../../lib/format";
+import { marked } from "marked";
 
 interface Props {
-  ebook: CollectionEntry<"ebooks">;
+  ebook: ProductEntry;
+  draftPreview?: boolean;
 }
 
-const { ebook } = Astro.props;
+const { ebook, draftPreview = false } = Astro.props;
 const { data } = ebook;
-const { Content } = await ebook.render();
+// Product overview is markdown stored in the DB (full_description / body).
+const overviewHtml = ebook.body ? marked.parse(ebook.body) : "";
 const url = `/ebooks/${ebook.slug}/`;
 
 // Unpublished / placeholder products are noindexed until real products replace them.
@@ -140,9 +143,7 @@ const noindex = !data.published;
 
       <div>
         <h2 class="h-display text-2xl">Product overview</h2>
-        <div class="prose-invert mt-5 max-w-none leading-relaxed text-brand-silver [&>p]:mt-4">
-          <Content />
-        </div>
+        <div class="prose-invert mt-5 max-w-none leading-relaxed text-brand-silver [&>p]:mt-4" set:html={overviewHtml}></div>
       </div>
 
       <!-- Lesson preview: titles public, content locked -->

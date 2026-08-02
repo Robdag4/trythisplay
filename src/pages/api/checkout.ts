@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
-import { getCollection } from "astro:content";
 import { stripe } from "../../lib/stripe";
-import { getUser } from "../../lib/auth";
+import { getUser, siteOrigin } from "../../lib/auth";
+import { getPublishedProductBySlug } from "../../lib/products";
 
 export const prerender = false;
 
@@ -18,12 +18,13 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     return redirect(`/login/?next=${encodeURIComponent(`/ebooks/${slug}/`)}`);
   }
 
-  const ebooks = await getCollection("ebooks");
-  const ebook = ebooks.find((e) => e.slug === slug && e.data.published);
+  // Price + product come from the DB (published only). Client only sends a slug.
+  const ebook = await getPublishedProductBySlug(slug);
   if (!ebook) {
     return redirect("/ebooks/?error=not-found");
   }
 
+  const origin = siteOrigin(request, url);
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     customer_email: user.email ?? undefined,
@@ -32,7 +33,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
         quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: Math.round(ebook.data.price * 100),
+          unit_amount: ebook.data.priceCents,
           product_data: {
             name: ebook.data.title,
             description: ebook.data.shortDescription.slice(0, 300),
@@ -43,10 +44,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     metadata: {
       user_id: user.id,
       product_slug: ebook.slug,
+      product_id: ebook.id,
       product_title: ebook.data.title,
     },
-    success_url: `${url.origin}/checkout/success/?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${url.origin}/ebooks/${ebook.slug}/`,
+    success_url: `${origin}/checkout/success/?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/ebooks/${ebook.slug}/`,
   });
 
   return redirect(session.url ?? "/ebooks/", 303);

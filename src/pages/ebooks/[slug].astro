@@ -1,38 +1,26 @@
 ---
-import { getCollection } from "astro:content";
+// Server-rendered (Phase 3): products come from the DB. /ebooks/[slug]/ still
+// resolves BOTH reserved category pages (/ebooks/offense/) and published product
+// pages (/ebooks/gun-bunch-offense-guide/). Category slugs are reserved; product
+// slugs are validated against them at creation time in the creator portal.
+export const prerender = false;
+
 import CategoryPage from "../../components/ebooks/CategoryPage.astro";
 import ProductPage from "../../components/ebooks/ProductPage.astro";
 import { EBOOK_CATEGORIES } from "../../data/site";
+import { getPublishedProductBySlug } from "../../lib/products";
 
-/**
- * /ebooks/[slug]/ resolves both editorial category pages
- * (/ebooks/offense/) and product pages (/ebooks/gun-bunch-offense-guide/),
- * matching the evergreen URL strategy. Category slugs are reserved and
- * validated against product slugs at build time.
- */
-export async function getStaticPaths() {
-  const ebooks = await getCollection("ebooks");
-  const categorySlugs = new Set<string>(EBOOK_CATEGORIES.map((c) => c.slug));
+const { slug } = Astro.params;
+const category = EBOOK_CATEGORIES.find((c) => c.slug === slug) ?? null;
 
-  const productPaths = ebooks
-    .filter((e) => !categorySlugs.has(e.slug))
-    .map((e) => ({
-      params: { slug: e.slug },
-      props: { kind: "product" as const, ebook: e, category: null },
-    }));
-
-  const categoryPaths = EBOOK_CATEGORIES.map((c) => ({
-    params: { slug: c.slug },
-    props: { kind: "category" as const, ebook: null, category: c },
-  }));
-
-  return [...categoryPaths, ...productPaths];
+let ebook = null;
+if (!category && slug) {
+  ebook = await getPublishedProductBySlug(slug);
+  if (!ebook) return Astro.redirect("/404/", 404);
 }
-
-const { kind, ebook, category } = Astro.props;
 ---
 
-{kind === "category" && category ? (
+{category ? (
   <CategoryPage {category} />
 ) : (
   ebook && <ProductPage {ebook} />
