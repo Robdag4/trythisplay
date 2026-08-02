@@ -5,17 +5,26 @@ import type { AstroCookies } from "astro";
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: any;
+};
+
 /** Per-request client that reads/writes the user's auth cookies. */
 export function supabaseServer(request: Request, cookies: AstroCookies) {
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
         return parseCookieHeader(request.headers.get("Cookie") ?? "").map(
-          ({ name, value }) => ({ name, value: value ?? "" })
+          (c: { name: string; value?: string }) => ({
+            name: c.name,
+            value: c.value ?? "",
+          })
         );
       },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
+      setAll(cookiesToSet: CookieToSet[]) {
+        cookiesToSet.forEach(({ name, value, options }: CookieToSet) =>
           cookies.set(name, value, options)
         );
       },
