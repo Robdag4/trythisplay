@@ -1,8 +1,17 @@
 {
   "name": "Add Founder Name",
+  "gamertag": "YourGamertag",
   "role": "Founder",
   "group": "founders",
-  "bio": "Placeholder entry. Add the real founder's biography, gamertag, and photo in src/content/team/. Placeholder entries render with a clear 'coming soon' treatment and are never presented as real people.",
+  "bio": "Placeholder entry. Replace with the real founder's blurb: who they are, their Madden background, and what they do for Try This Play. Two to four sentences reads best on the card.",
+  "photo": "/team/founder.jpg",
+  "socials": [
+    { "label": "Instagram", "url": "https://instagram.com/yourhandle" },
+    { "label": "X", "url": "https://x.com/yourhandle" },
+    { "label": "YouTube", "url": "https://youtube.com/@yourhandle" },
+    { "label": "Twitch", "url": "https://twitch.tv/yourhandle" },
+    { "label": "Kick", "url": "https://kick.com/yourhandle" }
+  ],
   "placeholder": true,
   "order": 1
 }

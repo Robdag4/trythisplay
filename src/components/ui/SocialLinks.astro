@@ -1,0 +1,74 @@
+---
+/**
+ * Renders a row of social icon links. Icon is chosen by matching the label
+ * (case-insensitive): Instagram, X (or Twitter), YouTube, Twitch, Kick.
+ * Unknown labels fall back to a generic link icon, so any platform works.
+ */
+interface Props {
+  socials: { label: string; url: string }[];
+  name: string;
+}
+
+const { socials, name } = Astro.props;
+
+const iconFor = (label: string): string => {
+  const key = label.toLowerCase().trim();
+  if (key.includes("instagram")) return "instagram";
+  if (key === "x" || key.includes("twitter")) return "x";
+  if (key.includes("youtube")) return "youtube";
+  if (key.includes("twitch")) return "twitch";
+  if (key.includes("kick")) return "kick";
+  return "link";
+};
+---
+
+{socials.length > 0 && (
+  <ul class="flex flex-wrap items-center gap-2">
+    {socials.map((s) => (
+      <li>
+        <a
+          href={s.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${name} on ${s.label}`}
+          title={s.label}
+          class="flex h-9 w-9 items-center justify-center border border-brand-line bg-brand-charcoal text-brand-silver transition-colors hover:border-brand-red hover:text-brand-red"
+        >
+          {iconFor(s.label) === "instagram" && (
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none" />
+            </svg>
+          )}
+          {iconFor(s.label) === "x" && (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.2l7.3-8.3L1 2h6.4l4.4 5.9L18.9 2Zm-1.1 18h1.7L7.1 3.9H5.3L17.8 20Z" />
+            </svg>
+          )}
+          {iconFor(s.label) === "youtube" && (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M23 7.2s-.2-1.6-.9-2.3c-.9-.9-1.8-.9-2.3-1C16.6 3.6 12 3.6 12 3.6s-4.6 0-7.8.3c-.5.1-1.4.1-2.3 1-.7.7-.9 2.3-.9 2.3S.8 9.1.8 11v1.8c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.5 1 1.8.2 7.6.3 7.6.3s4.6 0 7.8-.3c.5-.1 1.4-.1 2.3-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8V11c0-1.9-.2-3.8-.2-3.8ZM9.8 15.3V8.6l6.1 3.4-6.1 3.3Z" />
+            </svg>
+          )}
+          {iconFor(s.label) === "twitch" && (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M4.3 1 1.9 5.6v16.1h5.5V24h3.1l2.4-2.3h4.7L23.9 15V1H4.3Zm17.4 13-3.6 3.5h-5.5L10.2 20v-2.5H5.9V3.2h15.8V14ZM17.6 6.8v6.4h-2.2V6.8h2.2Zm-5.8 0v6.4H9.6V6.8h2.2Z" />
+            </svg>
+          )}
+          {iconFor(s.label) === "kick" && (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3 2h6v6h3V5h3V2h6v7h-3v3h3v7h-6v-3h-3v-3H9v6H3V2Z" />
+            </svg>
+          )}
+          {iconFor(s.label) === "link" && (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5" />
+              <path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 19" />
+            </svg>
+          )}
+        </a>
+      </li>
+    ))}
+  </ul>
+)}
