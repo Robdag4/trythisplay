@@ -23,12 +23,7 @@ const { product, editable } = Astro.props;
           <label class="block text-sm font-semibold" for="cover">Cover image</label>
           <input id="cover" name="cover" type="file" accept="image/jpeg,image/png,image/webp" required
             class="mt-2 w-full text-sm text-brand-silver file:mr-3 file:border file:border-brand-line file:bg-brand-panel file:px-3 file:py-2 file:text-sm" />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold" for="cover_alt">Alt text</label>
-          <input id="cover_alt" name="cover_alt" type="text" maxlength="160" value={product.cover_image_alt ?? ""}
-            placeholder="Describe the cover for accessibility"
-            class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+          <p class="mt-1 text-xs text-brand-silver">Alt text is generated automatically from your title.</p>
         </div>
         <button type="submit" class="btn-primary w-fit">Upload Cover</button>
       </form>

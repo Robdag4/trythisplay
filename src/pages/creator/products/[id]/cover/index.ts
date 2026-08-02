@@ -18,7 +18,7 @@ export const POST: APIRoute = async ({ params, request, cookies, redirect }) => 
   const admin = supabaseAdmin();
   const { data: product } = await admin
     .from("products")
-    .select("id, creator_id, status")
+    .select("id, creator_id, status, title")
     .eq("id", id)
     .maybeSingle();
   if (!product || product.creator_id !== guard.creator.id) return redirect("/creator/");
@@ -28,7 +28,9 @@ export const POST: APIRoute = async ({ params, request, cookies, redirect }) => 
 
   const form = await request.formData();
   const file = form.get("cover");
-  const alt = String(form.get("cover_alt") ?? "").slice(0, 160);
+  // Alt text is generated automatically from the product title (accessibility +
+  // SEO) so creators don't have to write it.
+  const alt = `${(product.title ?? "Ebook").trim()} — Madden 27 video ebook cover`.slice(0, 160);
 
   if (!(file instanceof File) || file.size === 0) return redirect(`${path}?tab=cover&error=nofile`);
   if (!OK_TYPES.includes(file.type)) return redirect(`${path}?tab=cover&error=type`);
