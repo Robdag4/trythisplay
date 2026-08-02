@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import type { Provider } from "@supabase/supabase-js";
 import { supabaseServer } from "../../../lib/supabase";
+import { siteOrigin } from "../../../lib/auth";
 
 export const prerender = false;
 
@@ -26,7 +27,7 @@ export const GET: APIRoute = async ({ request, cookies, redirect, url }) => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${url.origin}/auth/callback/?next=${encodeURIComponent(safeNext)}`,
+      redirectTo: `${siteOrigin(request, url)}/auth/callback/?next=${encodeURIComponent(safeNext)}`,
     },
   });
 
