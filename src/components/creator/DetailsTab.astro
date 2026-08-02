@@ -14,12 +14,11 @@ const fieldset = editable ? "" : "pointer-events-none opacity-60";
   </div>
 
   <div>
-    <label class="block text-sm font-semibold" for="slug">URL slug</label>
-    <div class="mt-2 flex items-center border border-brand-line bg-brand-panel">
-      <span class="pl-4 pr-1 font-mono text-xs text-brand-silver">/ebooks/</span>
-      <input id="slug" name="slug" type="text" maxlength="80" value={product.slug}
-        class="w-full bg-transparent py-3 pr-4 text-sm focus:outline-none" />
+    <span class="block text-sm font-semibold">Page URL</span>
+    <div class="mt-2 flex items-center border border-brand-line bg-brand-charcoal/60 px-4 py-3">
+      <span class="font-mono text-xs text-brand-silver">/ebooks/{product.slug}/</span>
     </div>
+    <p class="mt-1 text-xs text-brand-silver">Generated from your title.{product.published_at ? " Locked after publishing." : " Updates when you rename before publishing."}</p>
   </div>
 
   <div>

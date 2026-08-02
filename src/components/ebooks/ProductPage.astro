@@ -18,8 +18,8 @@ const { data } = ebook;
 const overviewHtml = ebook.body ? marked.parse(ebook.body) : "";
 const url = `/ebooks/${ebook.slug}/`;
 
-// Unpublished / placeholder products are noindexed until real products replace them.
-const noindex = !data.published;
+// Unpublished / placeholder products and draft previews are always noindexed.
+const noindex = !data.published || draftPreview;
 ---
 
 <BaseLayout

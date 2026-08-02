@@ -19,16 +19,25 @@ let error: string | null = null;
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const title = String(form.get("title") ?? "").trim();
-  let slug = String(form.get("slug") ?? "").trim();
-  if (!slug) slug = slugify(title);
-  else slug = slugify(slug);
+  // Slug is derived from the title — creators don't set it. If the derived slug
+  // collides with a reserved word or an existing product, disambiguate with a
+  // short suffix so creation still succeeds.
+  let slug = slugify(title);
 
   if (!title) {
     error = "Give your ebook a title to start.";
   } else {
-    const slugErr = await validateProductSlug(slug);
+    let slugErr = await validateProductSlug(slug);
     if (slugErr) {
-      error = slugErr;
+      // Auto-disambiguate rather than block the creator.
+      for (let i = 0; i < 5 && slugErr; i++) {
+        const suffix = Math.random().toString(36).slice(2, 6);
+        slug = slugify(`${title}-${suffix}`);
+        slugErr = await validateProductSlug(slug);
+      }
+    }
+    if (slugErr) {
+      error = "Couldn't generate a unique URL from that title. Try a different title.";
     } else {
       const admin = supabaseAdmin();
       const { data, error: insErr } = await admin
@@ -71,21 +80,7 @@ if (Astro.request.method === "POST") {
         <input id="title" name="title" type="text" required maxlength="120"
           placeholder="e.g. Gun Bunch Mastery"
           class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
-      </div>
-      <div>
-        <label for="slug" class="block text-sm font-semibold">
-          URL slug <span class="font-normal text-brand-silver">(optional — auto from title)</span>
-        </label>
-        <div class="mt-2 flex items-center border border-brand-line bg-brand-panel">
-          <span class="pl-4 pr-1 font-mono text-xs text-brand-silver">/ebooks/</span>
-          <input id="slug" name="slug" type="text" maxlength="80"
-            placeholder="gun-bunch-mastery"
-            class="w-full bg-transparent py-3 pr-4 text-sm focus:outline-none" />
-        </div>
-        <p class="mt-1 text-xs text-brand-silver">
-          Lowercase letters, numbers, hyphens. Reserved: offense, defense,
-          franchise, beginners, advanced, competitive, simulation.
-        </p>
+        <p class="mt-1 text-xs text-brand-silver">The page URL is generated automatically from your title.</p>
       </div>
       <div class="flex gap-3">
         <button type="submit" class="btn-primary">Create Draft</button>

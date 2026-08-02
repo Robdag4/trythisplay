@@ -41,10 +41,21 @@ if (Astro.request.method === "POST" && editable) {
 
   if (action === "details") {
     const title = String(form.get("title") ?? "").trim();
-    let slug = slugify(String(form.get("slug") ?? "").trim());
-    const slugErr = await validateProductSlug(slug, product.id);
+    // Slug is derived from the title, never edited directly. Keep the existing
+    // slug once a product has been published (URLs/purchases must stay stable);
+    // otherwise regenerate from the current title, disambiguating on collision.
+    let slug = product.slug;
+    let slugErr: string | null = null;
+    if (!product.published_at) {
+      slug = slugify(title);
+      slugErr = await validateProductSlug(slug, product.id);
+      for (let i = 0; i < 5 && slugErr; i++) {
+        slug = slugify(`${title}-${Math.random().toString(36).slice(2, 6)}`);
+        slugErr = await validateProductSlug(slug, product.id);
+      }
+    }
     if (!title) error = "Title is required.";
-    else if (slugErr) error = slugErr;
+    else if (slugErr) error = "Couldn't generate a unique URL from that title.";
     else {
       const priceDollars = Math.max(1, Math.min(500, Number(form.get("price") ?? 0)));
       const styles = form.getAll("styles").map(String).filter((s) => ["competitive", "simulation"].includes(s));
