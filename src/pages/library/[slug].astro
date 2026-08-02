@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getUser } from "../../lib/auth";
 import { getEntitledProductsBySlug } from "../../lib/products";
+import { signPlayback } from "../../lib/mux";
 
 export const prerender = false;
 
@@ -33,6 +34,9 @@ const completed = new Set((progressRows ?? []).map((r) => r.lesson_index));
 const requested = Number(Astro.url.searchParams.get("lesson") ?? 0);
 const current = Math.min(Math.max(requested, 0), Math.max(ebook.data.lessons.length - 1, 0));
 const lesson = ebook.data.lessons[current];
+
+// Signed playback token for the entitled buyer (assets use signed policy).
+const playbackToken = lesson?.playbackId ? await signPlayback(lesson.playbackId, "video", 3600) : null;
 ---
 
 <BaseLayout
@@ -50,9 +54,10 @@ const lesson = ebook.data.lessons[current];
       <!-- Video player: renders Mux playback when the lesson has a playbackId.
            Until videos are uploaded (creator portal phase), shows written setup only. -->
       <div class="mt-6 aspect-video w-full border border-brand-line bg-brand-charcoal">
-        {lesson?.playbackId ? (
+        {lesson?.playbackId && playbackToken ? (
           <mux-player
             playback-id={lesson.playbackId}
+            playback-token={playbackToken}
             metadata-video-title={lesson.title}
             accent-color="#E11D2E"
             style="width:100%;height:100%;"

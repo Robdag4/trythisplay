@@ -78,12 +78,28 @@ The cover upload endpoint writes to `covers/<product-id>/cover-*.ext` via the
 service role and stores the public URL on the product. Until the bucket exists,
 cover uploads redirect back with `?error=upload`.
 
-## Coming in later Phase 3 steps
-- 3.3 portal editor (details, lessons, cover, preview, submit)
-- 3.4 Mux video uploads + signed playback (env: `MUX_TOKEN_ID`,
-  `MUX_TOKEN_SECRET`, `MUX_WEBHOOK_SECRET`, `MUX_SIGNING_KEY_ID`,
-  `MUX_SIGNING_KEY_PRIVATE`)
-- 3.5 transcripts + AI written-setup drafting (env: `OPENAI_API_KEY`)
+## 6. Mux video (Phase 3.4) — direct upload + signed playback
+Mux Dashboard:
+- **Settings → Access Tokens → Generate** (permission: Mux Video, read+write) →
+  `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`.
+- **Settings → Signing Keys → Create** → `MUX_SIGNING_KEY_ID`,
+  `MUX_SIGNING_KEY_PRIVATE` (the base64 private key).
+- **Settings → Webhooks → Create**, URL
+  `https://trythisplay.vercel.app/api/webhooks/mux` → `MUX_WEBHOOK_SECRET`.
 
-These env vars will be documented here as each step lands; add them to Vercel
-and `.env.example` when prompted.
+Add all five to **Vercel → Environment Variables**. Assets are created with
+`signed` playback policy; the library viewer and creator preview mint short-lived
+JWTs so only entitled buyers can watch. Until the keys are set, the lesson editor
+shows "video uploads coming online."
+
+## 7. OpenAI (Phase 3.5) — transcripts + written-setup drafting
+- `OPENAI_API_KEY` from platform.openai.com → API keys → add to Vercel.
+The lesson editor's "✨ Generate from video" button transcribes the uploaded
+video (Mux audio rendition) with Whisper and drafts a structured written setup
+(formation, play, audibles, pre-snap, reads, counters, notes) with gpt-4o-mini.
+The creator edits and **Approves** it — nothing is auto-published. Rate-limited to
+10 attempts/lesson/hour. Requires the Mux signing keys (to read the audio).
+
+Env summary for this phase (Vercel):
+`MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`, `MUX_WEBHOOK_SECRET`, `MUX_SIGNING_KEY_ID`,
+`MUX_SIGNING_KEY_PRIVATE`, `OPENAI_API_KEY`.
