@@ -187,6 +187,17 @@ export async function getFeaturedProducts(): Promise<ProductEntry[]> {
   return all.filter((p) => p.data.featured);
 }
 
+/** Fetch one product by id in any status (creator preview). Service-role. */
+export async function getProductByIdAdmin(id: string): Promise<ProductEntry | null> {
+  const supabase = supabaseAdmin();
+  const { data, error } = await supabase.from("products").select(SELECT).eq("id", id).maybeSingle();
+  if (error) {
+    console.error("getProductByIdAdmin:", error.message);
+    return null;
+  }
+  return data ? toEntry(data) : null;
+}
+
 /**
  * Fetch products by slug for a PURCHASER's library, regardless of current
  * status (archived/unpublished products stay accessible to owners). Uses the

@@ -70,6 +70,14 @@ Reserved slugs (cannot be used as product slugs): `offense`, `defense`,
 `franchise`, `beginners`, `advanced`, `competitive`, `simulation`. Also avoid
 colliding with guide slugs. The portal validates this at creation time.
 
+## 5. Create the `covers` storage bucket (for cover uploads)
+Supabase → **Storage → New bucket**:
+- Name: `covers`
+- **Public bucket: ON** (covers are shown publicly on the storefront).
+The cover upload endpoint writes to `covers/<product-id>/cover-*.ext` via the
+service role and stores the public URL on the product. Until the bucket exists,
+cover uploads redirect back with `?error=upload`.
+
 ## Coming in later Phase 3 steps
 - 3.3 portal editor (details, lessons, cover, preview, submit)
 - 3.4 Mux video uploads + signed playback (env: `MUX_TOKEN_ID`,

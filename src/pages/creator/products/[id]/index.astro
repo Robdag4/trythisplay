@@ -1,0 +1,159 @@
+---
+export const prerender = false;
+
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import { requireCreator } from "../../../../lib/creator";
+import { supabaseAdmin } from "../../../../lib/supabase";
+import { slugify, validateProductSlug } from "../../../../lib/slug";
+import DetailsTab from "../../../../components/creator/DetailsTab.astro";
+import LessonsTab from "../../../../components/creator/LessonsTab.astro";
+import CoverTab from "../../../../components/creator/CoverTab.astro";
+import SubmitTab from "../../../../components/creator/SubmitTab.astro";
+
+const { id } = Astro.params;
+const path = `/creator/products/${id}/`;
+const guard = await requireCreator(Astro.request, Astro.cookies, path);
+if (!guard.ok) {
+  if (guard.redirect?.startsWith("/login")) return Astro.redirect(guard.redirect);
+  return Astro.redirect("/creator/");
+}
+
+const admin = supabaseAdmin();
+
+// Load product + verify ownership.
+let { data: product } = await admin
+  .from("products")
+  .select("*")
+  .eq("id", id)
+  .maybeSingle();
+if (!product || product.creator_id !== guard.creator.id) {
+  return Astro.redirect("/creator/");
+}
+
+const editable = product.status === "draft" || product.status === "changes_requested";
+let notice: string | null = null;
+let error: string | null = null;
+
+// ── Details tab save ────────────────────────────────────────────────────────
+if (Astro.request.method === "POST" && editable) {
+  const form = await Astro.request.formData();
+  const action = String(form.get("_action") ?? "");
+
+  if (action === "details") {
+    const title = String(form.get("title") ?? "").trim();
+    let slug = slugify(String(form.get("slug") ?? "").trim());
+    const slugErr = await validateProductSlug(slug, product.id);
+    if (!title) error = "Title is required.";
+    else if (slugErr) error = slugErr;
+    else {
+      const priceDollars = Math.max(1, Math.min(500, Number(form.get("price") ?? 0)));
+      const styles = form.getAll("styles").map(String).filter((s) => ["competitive", "simulation"].includes(s));
+      const patch = {
+        title,
+        slug,
+        short_description: String(form.get("short_description") ?? "").slice(0, 300),
+        full_description: String(form.get("full_description") ?? ""),
+        category: String(form.get("category") ?? "offense"),
+        difficulty: String(form.get("difficulty") ?? "beginner"),
+        styles,
+        playbook: String(form.get("playbook") ?? "").trim() || null,
+        formation: String(form.get("formation") ?? "").trim() || null,
+        price_cents: Math.round(priceDollars * 100),
+        what_you_will_learn: String(form.get("what_you_will_learn") ?? "")
+          .split("\n").map((s) => s.trim()).filter(Boolean),
+        who_this_is_for: String(form.get("who_this_is_for") ?? "")
+          .split("\n").map((s) => s.trim()).filter(Boolean),
+      };
+      const { error: upErr } = await admin.from("products").update(patch).eq("id", product.id);
+      if (upErr) { console.error(upErr.message); error = "Save failed. Try again."; }
+      else {
+        notice = "Details saved.";
+        product = { ...product, ...patch };
+      }
+    }
+  }
+}
+
+// Load lessons for the Lessons/Submit tabs.
+const { data: lessons } = await admin
+  .from("lessons")
+  .select("*")
+  .eq("product_id", product.id)
+  .order("sort_order", { ascending: true });
+
+// Latest submission (for changes-requested comments).
+const { data: submission } = await admin
+  .from("submissions")
+  .select("*")
+  .eq("product_id", product.id)
+  .order("created_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+const tab = Astro.url.searchParams.get("tab") ?? "details";
+const TABS = [
+  { key: "details", label: "Details" },
+  { key: "lessons", label: "Lessons" },
+  { key: "cover", label: "Cover" },
+  { key: "preview", label: "Preview" },
+  { key: "submit", label: "Submit" },
+];
+
+const statusChip: Record<string, string> = {
+  draft: "border-brand-line text-brand-silver",
+  submitted: "border-yellow-500/50 text-yellow-400",
+  changes_requested: "border-orange-500/50 text-orange-400",
+  approved: "border-sky-500/50 text-sky-400",
+  published: "border-emerald-500/50 text-emerald-400",
+  archived: "border-brand-line text-brand-silver/60",
+};
+---
+
+<BaseLayout title={`${product.title} | Creator Portal`} description="Edit ebook." noindex={true}>
+  <section class="container-site py-10">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <a href="/creator/" class="text-sm text-brand-silver hover:text-brand-white">← Portal</a>
+        <h1 class="h-display text-2xl">{product.title}</h1>
+        <span class={`border px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${statusChip[product.status]}`}>{product.status.replace("_", " ")}</span>
+      </div>
+      {product.status === "published" && (
+        <a href={`/ebooks/${product.slug}/`} class="btn-secondary text-sm">View live</a>
+      )}
+    </div>
+
+    {!editable && (
+      <p class="mt-4 border border-yellow-600/40 bg-yellow-950/15 p-3 text-sm text-yellow-300">
+        This product is <b>{product.status.replace("_", " ")}</b> and is locked for editing.
+        {product.status === "submitted" && " It's in the review queue."}
+      </p>
+    )}
+    {notice && <p class="mt-4 border border-emerald-600/40 bg-emerald-950/15 p-3 text-sm text-emerald-300">{notice}</p>}
+    {error && <p class="mt-4 border border-brand-red/50 bg-brand-red/10 p-3 text-sm">{error}</p>}
+
+    <!-- Tabs -->
+    <nav class="mt-6 flex flex-wrap gap-1 border-b border-brand-line">
+      {TABS.map((t) => (
+        <a href={`${path}?tab=${t.key}`}
+          class={`px-4 py-2 text-sm font-semibold ${tab === t.key ? "border-b-2 border-brand-red text-brand-white" : "text-brand-silver hover:text-brand-white"}`}>
+          {t.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="mt-8">
+      {tab === "details" && <DetailsTab {product} {editable} />}
+      {tab === "lessons" && <LessonsTab {product} lessons={lessons ?? []} {editable} />}
+      {tab === "cover" && <CoverTab {product} {editable} />}
+      {tab === "preview" && (
+        <div class="rounded border border-brand-line bg-brand-panel p-6">
+          <p class="text-sm text-brand-silver">
+            A watermarked draft preview of your public product page opens in a new tab.
+          </p>
+          <a href={`/creator/products/${product.id}/preview/`} target="_blank" class="btn-primary mt-4 inline-block">Open Draft Preview</a>
+        </div>
+      )}
+      {tab === "submit" && <SubmitTab {product} lessons={lessons ?? []} {submission} />}
+    </div>
+  </section>
+</BaseLayout>

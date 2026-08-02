@@ -1,0 +1,57 @@
+---
+interface Props { product: any; lessons: any[]; editable: boolean; }
+const { product, lessons, editable } = Astro.props;
+
+function fmt(sec: number | null) {
+  if (!sec) return "—";
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+const statusDot: Record<string, string> = {
+  uploading: "bg-yellow-500", processing: "bg-yellow-500",
+  ready: "bg-emerald-500", error: "bg-red-500",
+};
+---
+<div class="max-w-2xl">
+  <p class="text-sm text-brand-silver">
+    Add lessons in order. Each needs a video (uploaded to Mux) and, before you can
+    submit, an approved written setup. At least one lesson must be a free preview.
+  </p>
+
+  {lessons.length === 0 ? (
+    <div class="mt-6 border border-dashed border-brand-line bg-brand-panel p-8 text-center text-sm text-brand-silver">
+      No lessons yet. Add your first below.
+    </div>
+  ) : (
+    <ol class="mt-6 grid gap-2">
+      {lessons.map((l, i) => (
+        <li class="card flex items-center justify-between p-4">
+          <div class="flex items-center gap-3">
+            <span class="font-mono text-xs text-brand-silver">{i + 1}</span>
+            <div>
+              <div class="font-semibold">{l.title || "Untitled lesson"}</div>
+              <div class="mt-0.5 flex items-center gap-2 text-xs text-brand-silver">
+                <span class={`inline-block h-2 w-2 rounded-full ${statusDot[l.status] ?? "bg-brand-line"}`}></span>
+                {l.status} · {fmt(l.runtime_seconds)}
+                {l.free_preview && <span class="text-emerald-400">· free preview</span>}
+                {l.written_setup_approved_at && <span class="text-sky-400">· setup approved</span>}
+              </div>
+            </div>
+          </div>
+          {editable && (
+            <a href={`/creator/products/${product.id}/lessons/${l.id}/`} class="btn-secondary text-xs">Edit</a>
+          )}
+        </li>
+      ))}
+    </ol>
+  )}
+
+  {editable && (
+    <form method="POST" action={`/creator/products/${product.id}/lessons/`} class="mt-6 flex gap-2">
+      <input type="hidden" name="_action" value="add" />
+      <input name="title" type="text" required maxlength="120" placeholder="New lesson title"
+        class="flex-1 border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+      <button type="submit" class="btn-primary">Add Lesson</button>
+    </form>
+  )}
+</div>

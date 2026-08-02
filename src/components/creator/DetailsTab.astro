@@ -1,0 +1,102 @@
+---
+interface Props { product: any; editable: boolean; }
+const { product, editable } = Astro.props;
+const dollars = ((product.price_cents ?? 0) / 100).toFixed(2);
+const fieldset = editable ? "" : "pointer-events-none opacity-60";
+---
+<form method="POST" class={`grid max-w-2xl gap-5 ${fieldset}`}>
+  <input type="hidden" name="_action" value="details" />
+
+  <div>
+    <label class="block text-sm font-semibold" for="title">Title</label>
+    <input id="title" name="title" type="text" required maxlength="120" value={product.title}
+      class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold" for="slug">URL slug</label>
+    <div class="mt-2 flex items-center border border-brand-line bg-brand-panel">
+      <span class="pl-4 pr-1 font-mono text-xs text-brand-silver">/ebooks/</span>
+      <input id="slug" name="slug" type="text" maxlength="80" value={product.slug}
+        class="w-full bg-transparent py-3 pr-4 text-sm focus:outline-none" />
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold" for="short_description">Short description</label>
+    <input id="short_description" name="short_description" type="text" maxlength="300" value={product.short_description ?? ""}
+      placeholder="One line shown on cards and search."
+      class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold" for="full_description">Full description (markdown)</label>
+    <textarea id="full_description" name="full_description" rows="6"
+      class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">{product.full_description ?? ""}</textarea>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label class="block text-sm font-semibold" for="category">Category</label>
+      <select id="category" name="category" class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm">
+        {["offense", "defense", "franchise"].map((c) => (
+          <option value={c} selected={product.category === c}>{c}</option>
+        ))}
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold" for="difficulty">Difficulty</label>
+      <select id="difficulty" name="difficulty" class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm">
+        {["beginner", "intermediate", "advanced"].map((d) => (
+          <option value={d} selected={product.difficulty === d}>{d}</option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  <div>
+    <span class="block text-sm font-semibold">Play styles</span>
+    <div class="mt-2 flex gap-4">
+      {["competitive", "simulation"].map((s) => (
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="styles" value={s} checked={(product.styles ?? []).includes(s)} />
+          {s}
+        </label>
+      ))}
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label class="block text-sm font-semibold" for="playbook">Playbook (optional)</label>
+      <input id="playbook" name="playbook" type="text" value={product.playbook ?? ""}
+        class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+    </div>
+    <div>
+      <label class="block text-sm font-semibold" for="formation">Formation (optional)</label>
+      <input id="formation" name="formation" type="text" value={product.formation ?? ""}
+        class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold" for="price">Price (USD)</label>
+    <input id="price" name="price" type="number" min="1" max="500" step="1" value={dollars}
+      class="mt-2 w-40 border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+    <p class="mt-1 text-xs text-brand-silver">$1–$500.</p>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold" for="what_you_will_learn">What you'll learn (one per line)</label>
+    <textarea id="what_you_will_learn" name="what_you_will_learn" rows="4"
+      class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">{(product.what_you_will_learn ?? []).join("\n")}</textarea>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold" for="who_this_is_for">Who this is for (one per line)</label>
+    <textarea id="who_this_is_for" name="who_this_is_for" rows="3"
+      class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">{(product.who_this_is_for ?? []).join("\n")}</textarea>
+  </div>
+
+  {editable && <button type="submit" class="btn-primary w-fit">Save Details</button>}
+</form>

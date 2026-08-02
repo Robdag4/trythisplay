@@ -1,0 +1,96 @@
+---
+export const prerender = false;
+
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import SectionHeading from "../../../../components/ui/SectionHeading.astro";
+import { requireCreator } from "../../../../lib/creator";
+import { slugify, validateProductSlug } from "../../../../lib/slug";
+import { supabaseAdmin } from "../../../../lib/supabase";
+
+const path = "/creator/products/new/";
+const guard = await requireCreator(Astro.request, Astro.cookies, path);
+if (!guard.ok) {
+  if (guard.redirect?.startsWith("/login")) return Astro.redirect(guard.redirect);
+  return Astro.redirect("/creator/");
+}
+
+let error: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const title = String(form.get("title") ?? "").trim();
+  let slug = String(form.get("slug") ?? "").trim();
+  if (!slug) slug = slugify(title);
+  else slug = slugify(slug);
+
+  if (!title) {
+    error = "Give your ebook a title to start.";
+  } else {
+    const slugErr = await validateProductSlug(slug);
+    if (slugErr) {
+      error = slugErr;
+    } else {
+      const admin = supabaseAdmin();
+      const { data, error: insErr } = await admin
+        .from("products")
+        .insert({
+          title,
+          slug,
+          creator_id: guard.creator.id,
+          status: "draft",
+          current_madden_version: "Madden 27",
+        })
+        .select("id")
+        .single();
+      if (insErr || !data) {
+        console.error("create product failed:", insErr?.message);
+        error = "Could not create the product. Try again.";
+      } else {
+        return Astro.redirect(`/creator/products/${data.id}/`);
+      }
+    }
+  }
+}
+---
+
+<BaseLayout title="New Ebook | Creator Portal" description="Create a new ebook." noindex={true}>
+  <section class="container-site max-w-xl py-12">
+    <SectionHeading eyebrow="Creator Portal" title="New Ebook" />
+    <p class="mt-3 text-sm text-brand-silver">
+      Start with a working title. You can refine everything — including the URL
+      slug — before you submit for review.
+    </p>
+
+    {error && (
+      <p class="mt-5 border border-brand-red/50 bg-brand-red/10 p-3 text-sm">{error}</p>
+    )}
+
+    <form method="POST" class="mt-6 grid gap-5">
+      <div>
+        <label for="title" class="block text-sm font-semibold">Title</label>
+        <input id="title" name="title" type="text" required maxlength="120"
+          placeholder="e.g. Gun Bunch Mastery"
+          class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+      </div>
+      <div>
+        <label for="slug" class="block text-sm font-semibold">
+          URL slug <span class="font-normal text-brand-silver">(optional — auto from title)</span>
+        </label>
+        <div class="mt-2 flex items-center border border-brand-line bg-brand-panel">
+          <span class="pl-4 pr-1 font-mono text-xs text-brand-silver">/ebooks/</span>
+          <input id="slug" name="slug" type="text" maxlength="80"
+            placeholder="gun-bunch-mastery"
+            class="w-full bg-transparent py-3 pr-4 text-sm focus:outline-none" />
+        </div>
+        <p class="mt-1 text-xs text-brand-silver">
+          Lowercase letters, numbers, hyphens. Reserved: offense, defense,
+          franchise, beginners, advanced, competitive, simulation.
+        </p>
+      </div>
+      <div class="flex gap-3">
+        <button type="submit" class="btn-primary">Create Draft</button>
+        <a href="/creator/" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </section>
+</BaseLayout>

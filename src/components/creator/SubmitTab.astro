@@ -1,0 +1,65 @@
+---
+interface Props { product: any; lessons: any[]; submission: any; }
+const { product, lessons, submission } = Astro.props;
+
+const readyLessons = lessons.filter((l) => l.status === "ready");
+const hasFreePreview = lessons.some((l) => l.free_preview);
+const allSetupsApproved = lessons.length > 0 && lessons.every((l) => !!l.written_setup_approved_at);
+
+const checks = [
+  { ok: !!product.title && !!product.short_description, label: "Title and short description filled" },
+  { ok: (product.price_cents ?? 0) >= 100, label: "Price set ($1 minimum)" },
+  { ok: !!product.cover_image_url, label: "Cover image uploaded" },
+  { ok: readyLessons.length >= 3, label: "At least 3 lessons uploaded and ready" },
+  { ok: hasFreePreview, label: "At least one free-preview lesson" },
+  { ok: allSetupsApproved, label: "Every lesson's written setup approved" },
+];
+const allPass = checks.every((c) => c.ok);
+const canSubmit = allPass && (product.status === "draft" || product.status === "changes_requested");
+
+// Reviewer comments (when changes were requested).
+const comments = (submission?.comments ?? []) as any[];
+const showComments = product.status === "changes_requested" && comments.length > 0;
+---
+<div class="max-w-2xl">
+  {showComments && (
+    <div class="mb-6 border border-orange-600/40 bg-orange-950/15 p-4">
+      <div class="text-sm font-bold text-orange-300">Reviewer requested changes</div>
+      <ul class="mt-2 grid gap-2">
+        {comments.map((c) => (
+          <li class="text-sm text-brand-silver">
+            {c.lesson_id && <span class="font-mono text-xs text-orange-400">lesson · </span>}
+            {c.field && <span class="font-mono text-xs text-orange-400">{c.field} · </span>}
+            {c.message}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  <p class="text-sm text-brand-silver">Everything below must pass before you can submit for review.</p>
+
+  <ul class="mt-5 grid gap-2">
+    {checks.map((c) => (
+      <li class="flex items-center gap-3 text-sm">
+        <span class={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${c.ok ? "bg-emerald-600 text-white" : "border border-brand-line text-brand-silver"}`}>
+          {c.ok ? "✓" : ""}
+        </span>
+        <span class={c.ok ? "text-brand-white" : "text-brand-silver"}>{c.label}</span>
+      </li>
+    ))}
+  </ul>
+
+  {product.status === "submitted" ? (
+    <p class="mt-6 border border-yellow-600/40 bg-yellow-950/15 p-3 text-sm text-yellow-300">
+      Submitted — in the review queue. Editing is locked until a decision.
+    </p>
+  ) : (
+    <form method="POST" action={`/creator/products/${product.id}/submit/`} class="mt-6">
+      <button type="submit" class="btn-primary" disabled={!canSubmit}>
+        Submit for Review
+      </button>
+      {!allPass && <p class="mt-2 text-xs text-brand-silver">Complete every item above to enable submission.</p>}
+    </form>
+  )}
+</div>
