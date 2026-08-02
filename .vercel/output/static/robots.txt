@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /creator/
-Disallow: /library/
-Disallow: /account/
-Disallow: /checkout/
-
-Sitemap: https://trythisplay.com/sitemap-index.xml
