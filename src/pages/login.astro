@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Login | Try This Play"
+  description="Sign in to your Try This Play account to access your Madden 27 ebook library."
+  noindex={true}
+>
+  <section class="container-site flex min-h-[60vh] items-center justify-center py-12">
+    <div class="card w-full max-w-md p-8 text-center">
+      <h1 class="h-display text-3xl">Customer Login</h1>
+      <p class="mt-4 text-sm leading-relaxed text-brand-silver">
+        Customer accounts, checkout, and your private ebook library launch with
+        the commerce release. Sign-in will use secure email authentication
+        through Supabase.
+      </p>
+      <a href="/ebooks/" class="btn-primary mt-6 w-full">Browse Ebooks</a>
+    </div>
+  </section>
+</BaseLayout>

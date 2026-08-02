@@ -1,0 +1,23 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<!-- Phase 2: this route becomes server-rendered (prerender = false) with
+     Supabase auth and entitlement checks. It is noindexed, excluded from the
+     sitemap, and disallowed in robots.txt. -->
+<BaseLayout
+  title="My Library | Try This Play"
+  description="Your private Madden 27 ebook library."
+  noindex={true}
+>
+  <section class="container-site flex min-h-[60vh] items-center justify-center py-12">
+    <div class="card w-full max-w-md p-8 text-center">
+      <h1 class="h-display text-3xl">My Library</h1>
+      <p class="mt-4 text-sm leading-relaxed text-brand-silver">
+        Your purchased ebooks, lesson progress, and Discord connection will
+        live here once customer accounts launch.
+      </p>
+      <a href="/ebooks/" class="btn-primary mt-6 w-full">Browse Ebooks</a>
+    </div>
+  </section>
+</BaseLayout>

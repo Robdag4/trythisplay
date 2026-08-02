@@ -1,0 +1,220 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import EbookCard from "../components/ebooks/EbookCard.astro";
+import FranchiseCard from "../components/franchise/FranchiseCard.astro";
+import SectionHeading from "../components/ui/SectionHeading.astro";
+import RouteLines from "../components/ui/RouteLines.astro";
+import { SITE } from "../data/site";
+
+const ebooks = await getCollection("ebooks");
+const featured = ebooks.filter((e) => e.data.featured).slice(0, 4);
+
+const steps = [
+  {
+    title: "Choose Your Ebook",
+    body: "Browse offensive, defensive, and franchise products by playbook, formation, and skill level. Every product shows exactly what's inside before you buy.",
+  },
+  {
+    title: "Purchase Instant Access",
+    body: "Secure checkout, instant delivery. Your ebook appears in your private library with video lessons, written setups, audibles, reads, adjustments, counters, and full transcripts.",
+  },
+  {
+    title: "Watch, Learn, and Win",
+    body: "Follow step-by-step lessons, track your progress, and get future updates as creators revise setups for new patches throughout the Madden season.",
+  },
+];
+
+const whyItems = [
+  { title: "Experienced players", body: "Learn from creators with real competitive Madden experience, not recycled tips." },
+  { title: "Video and written instruction", body: "Every lesson pairs video with a structured written setup you can reference mid-game." },
+  { title: "Step-by-step setups", body: "Formations, audibles, pre-snap adjustments, and reads laid out in order, nothing assumed." },
+  { title: "Updated strategies", body: "Products show their current Madden version and last-updated date, and get revised as the meta shifts." },
+  { title: "Secure customer access", body: "Your library is private, protected, and streams securely on any device." },
+  { title: "Two franchise communities", body: "Competitive and simulation leagues with active Discords, rankings, and season-long content." },
+];
+---
+
+<BaseLayout
+  title="Madden 27 Ebooks, Strategy Guides & Franchise Leagues | Try This Play"
+  description={SITE.description}
+>
+  <!-- Hero -->
+  <section class="relative overflow-hidden border-b border-brand-line bg-stadium-glow">
+    <RouteLines class="pointer-events-none absolute -right-24 bottom-0 h-[420px] w-auto text-brand-red/15" />
+    <div class="container-site relative py-24 sm:py-32">
+      <p class="eyebrow">Video Ebooks · Written Setups · Franchise Leagues</p>
+      <h1 class="h-display mt-4 max-w-4xl text-5xl sm:text-6xl lg:text-7xl">
+        Master Madden 27.<br />
+        Build Your Franchise.<br />
+        <span class="text-brand-red">Dominate Every Game.</span>
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-brand-silver">
+        Learn winning Madden strategies through premium video ebooks, written
+        setups, competitive franchise leagues, simulation-style leagues, and an
+        active Madden community.
+      </p>
+      <div class="mt-10 flex flex-wrap gap-4">
+        <a href="/ebooks/" class="btn-primary">Browse Ebooks</a>
+        <a href="/franchise/" class="btn-secondary">Join A Franchise</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Ebooks -->
+  <section class="container-site py-20">
+    <div class="flex flex-wrap items-end justify-between gap-6">
+      <SectionHeading
+        eyebrow="The Marketplace"
+        title="Featured Ebooks"
+        intro="Creator-led products with video lessons, structured written setups, and updates throughout the Madden 27 season."
+      />
+      <a href="/ebooks/" class="btn-secondary shrink-0">View All Ebooks</a>
+    </div>
+    {featured.length > 0 ? (
+      <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {featured.map((ebook) => <EbookCard {ebook} />)}
+      </div>
+    ) : (
+      <p class="mt-12 border border-brand-line bg-brand-panel p-8 text-brand-silver">
+        Products are coming soon. Creator submissions are in review for the
+        Madden 27 launch catalog.
+      </p>
+    )}
+  </section>
+
+  <!-- How It Works -->
+  <section class="diagonal-top bg-brand-charcoal pb-20 pt-28">
+    <div class="container-site">
+      <SectionHeading
+        eyebrow="How It Works"
+        title="Three Steps To Better Football"
+        align="center"
+      />
+      <ol class="mt-12 grid gap-6 md:grid-cols-3">
+        {steps.map((step, i) => (
+          <li class="card p-8">
+            <span class="font-mono text-sm text-brand-red">Step {i + 1}</span>
+            <h3 class="h-display mt-2 text-2xl">{step.title}</h3>
+            <p class="mt-4 text-sm leading-relaxed text-brand-silver">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Franchise Experience -->
+  <section class="container-site py-20">
+    <SectionHeading
+      eyebrow="The Franchise Experience"
+      title="Two Leagues. One Community."
+      intro="Whether you want ranked competition or realistic NFL-style team building, there's a league and a Discord built for how you play."
+    />
+    <div class="mt-12 grid gap-6 lg:grid-cols-2">
+      <FranchiseCard
+        eyebrow="For Competitors"
+        title="Competitive Franchise"
+        features={[
+          "High-level user gameplay",
+          "Rankings and standings",
+          "Tournaments",
+          "Advanced rule set",
+          "Scheduled user games",
+          "Competitive Discord access",
+          "Leaderboards",
+          "Seasonal champions",
+        ]}
+        cta="Join Competitive Franchise"
+        href="/franchise/competitive/"
+      />
+      <FranchiseCard
+        eyebrow="For Team Builders"
+        title="Simulation Franchise"
+        features={[
+          "Realistic NFL-style gameplay",
+          "Team building and trades",
+          "Salary cap management",
+          "Draft strategy",
+          "Player development",
+          "Weekly league content",
+          "Power rankings",
+          "Simulation Discord access",
+        ]}
+        cta="Join Simulation Franchise"
+        href="/franchise/simulation/"
+      />
+    </div>
+  </section>
+
+  <!-- Why Try This Play -->
+  <section class="border-y border-brand-line bg-brand-charcoal py-20">
+    <div class="container-site">
+      <SectionHeading eyebrow="Why Try This Play" title="Built For Players Who Want To Improve" />
+      <div class="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+        {whyItems.map((item) => (
+          <div class="border-l-2 border-brand-red pl-5">
+            <h3 class="font-semibold">{item.title}</h3>
+            <p class="mt-2 text-sm leading-relaxed text-brand-silver">{item.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Creator Recruitment -->
+  <section class="container-site py-20">
+    <div class="card relative overflow-hidden p-10 sm:p-14">
+      <RouteLines class="pointer-events-none absolute -bottom-10 right-0 h-64 w-auto text-brand-red/10" />
+      <p class="eyebrow">For Creators</p>
+      <h2 class="h-display mt-2 max-w-2xl text-4xl">
+        Turn Your Madden Knowledge Into Income
+      </h2>
+      <p class="mt-4 max-w-2xl leading-relaxed text-brand-silver">
+        Approved creators upload video lessons, generate transcripts, build
+        structured written setups, add cover art, preview their ebook, and
+        submit for review, then earn revenue from every sale.
+      </p>
+      <a href="/creators/apply/" class="btn-primary mt-8">Become A Creator</a>
+    </div>
+  </section>
+
+  <!-- Discord -->
+  <section class="border-y border-brand-line bg-brand-charcoal py-20">
+    <div class="container-site text-center">
+      <SectionHeading
+        eyebrow="Community"
+        title="Connect On Discord"
+        intro="Verified customer roles, product-owner channels, strategy discussion, matchmaking, franchise announcements, and league updates across both servers."
+        align="center"
+      />
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="/franchise/competitive/" class="btn-primary">Connect With The Community</a>
+        <a href="/franchise/simulation/" class="btn-secondary">Simulation Server Info</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials (launch state: no fabricated reviews) -->
+  <section class="container-site py-20">
+    <SectionHeading eyebrow="Player Results" title="What Customers Are Saying" />
+    <div class="mt-10 border border-dashed border-brand-line bg-brand-panel p-10 text-center">
+      <p class="mx-auto max-w-xl leading-relaxed text-brand-silver">
+        We only publish verified reviews from real customers. Reviews will
+        appear here as players complete their first products after launch.
+      </p>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="relative overflow-hidden border-t border-brand-line bg-stadium-glow py-24">
+    <div class="container-site text-center">
+      <h2 class="h-display text-5xl sm:text-6xl">
+        Stop Guessing.<br /><span class="text-brand-red">Start Winning.</span>
+      </h2>
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="/ebooks/" class="btn-primary">Browse Ebooks</a>
+        <a href="/franchise/" class="btn-secondary">Join A Franchise</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

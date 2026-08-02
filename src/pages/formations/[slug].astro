@@ -1,0 +1,74 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
+import UpdatedBadge from "../../components/ui/UpdatedBadge.astro";
+import { formatDate, capitalize } from "../../lib/format";
+
+export async function getStaticPaths() {
+  const formations = await getCollection("formations", ({ data }) => !data.draft);
+  return formations.map((fm) => ({ params: { slug: fm.slug }, props: { fm } }));
+}
+
+const { fm } = Astro.props;
+const { data } = fm;
+const { Content } = await fm.render();
+---
+
+<BaseLayout
+  title={`${data.name} Formation Guide | Madden 27 | Try This Play`}
+  description={`Madden 27 ${data.name} formation breakdown: ${data.personnel} personnel, strengths, weaknesses, and best situations.`}
+  noindex={data.noindex}
+>
+  <Breadcrumbs
+    crumbs={[
+      { label: "Home", href: "/" },
+      { label: "Formations", href: "/formations/" },
+      { label: data.name, href: `/formations/${fm.slug}/` },
+    ]}
+  />
+
+  <section class="container-site max-w-3xl py-12">
+    <UpdatedBadge />
+    <h1 class="h-display mt-3 text-4xl sm:text-5xl">{data.name}</h1>
+    <p class="mt-2 font-mono text-sm uppercase tracking-wider text-brand-silver">
+      {capitalize(data.side)} · {data.personnel} · Reviewed {formatDate(data.lastReviewed)}
+    </p>
+
+    <div class="mt-8 grid gap-6 sm:grid-cols-2">
+      <div class="card p-6">
+        <h2 class="h-display text-xl text-brand-red">Strengths</h2>
+        <ul class="mt-4 space-y-2 text-sm text-brand-silver">
+          {data.strengths.map((s) => <li>{s}</li>)}
+        </ul>
+      </div>
+      <div class="card p-6">
+        <h2 class="h-display text-xl">Weaknesses</h2>
+        <ul class="mt-4 space-y-2 text-sm text-brand-silver">
+          {data.weaknesses.map((w) => <li>{w}</li>)}
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="h-display mt-10 text-2xl">Best situations</h2>
+    <ul class="mt-4 flex flex-wrap gap-2">
+      {data.bestSituations.map((s) => (
+        <li class="border border-brand-line bg-brand-panel px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-brand-silver">
+          {s}
+        </li>
+      ))}
+    </ul>
+
+    <div class="mt-8 leading-relaxed text-brand-silver [&>p]:mt-4">
+      <Content />
+    </div>
+
+    <div class="card mt-12 p-8">
+      <h2 class="h-display text-2xl">Learn complete schemes</h2>
+      <p class="mt-3 text-sm text-brand-silver">
+        Our video ebooks turn formations like this into full offenses with setups for every coverage.
+      </p>
+      <a href="/ebooks/" class="btn-primary mt-5">Browse Related Ebooks</a>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,70 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "./Breadcrumbs.astro";
+import SectionHeading from "./SectionHeading.astro";
+import { formatDate } from "../../lib/format";
+
+interface Props {
+  slug: "offense" | "defense";
+  title: string;
+  seoTitle: string;
+  description: string;
+  intro: string;
+  topics: string[];
+}
+
+const { slug, title, seoTitle, description, intro, topics } = Astro.props;
+
+const guides = (
+  await getCollection("guides", ({ data }) => !data.draft && data.category === slug)
+).sort((a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime());
+---
+
+<BaseLayout title={seoTitle} {description}>
+  <Breadcrumbs crumbs={[{ label: "Home", href: "/" }, { label: title, href: `/${slug}/` }]} />
+
+  <section class="container-site py-12">
+    <SectionHeading eyebrow="Strategy Hub" title={`Madden 27 ${title}`} intro={intro} />
+
+    <ul class="mt-8 flex flex-wrap gap-2">
+      {topics.map((t) => (
+        <li class="border border-brand-line bg-brand-panel px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-brand-silver">
+          {t}
+        </li>
+      ))}
+    </ul>
+
+    <h2 class="h-display mt-14 text-2xl">{title} guides</h2>
+    {guides.length > 0 ? (
+      <div class="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {guides.map((guide) => (
+          <article class="card group p-6">
+            <a href={`/guides/${guide.slug}/`} class="flex h-full flex-col">
+              <h3 class="h-display text-xl group-hover:text-brand-red transition-colors">
+                {guide.data.title}
+              </h3>
+              <p class="mt-3 flex-1 text-sm leading-relaxed text-brand-silver">
+                {guide.data.description}
+              </p>
+              <p class="mt-4 border-t border-brand-line pt-4 font-mono text-xs text-brand-silver">
+                Updated {formatDate(guide.data.updatedAt)}
+              </p>
+            </a>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <p class="mt-6 text-brand-silver">Guides for this hub are in progress.</p>
+    )}
+
+    <div class="card mt-16 p-8">
+      <h2 class="h-display text-2xl">Ready for complete schemes?</h2>
+      <p class="mt-3 max-w-2xl text-sm text-brand-silver">
+        Video ebooks include lesson-by-lesson setups, audibles, and adjustments
+        for the concepts covered in these free guides.
+      </p>
+      <a href={`/ebooks/${slug}/`} class="btn-primary mt-5">Browse {title} Ebooks</a>
+    </div>
+  </section>
+</BaseLayout>

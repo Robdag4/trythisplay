@@ -1,0 +1,60 @@
+---
+import type { CollectionEntry } from "astro:content";
+import UpdatedBadge from "../ui/UpdatedBadge.astro";
+import { formatPrice, capitalize } from "../../lib/format";
+
+interface Props {
+  ebook: CollectionEntry<"ebooks">;
+}
+
+const { ebook } = Astro.props;
+const { data } = ebook;
+---
+
+<article class="card group flex flex-col">
+  <a href={`/ebooks/${ebook.slug}/`} class="flex flex-1 flex-col">
+    <div class="relative aspect-[4/5] overflow-hidden border-b border-brand-line bg-brand-charcoal">
+      {data.coverImage ? (
+        <img
+          src={data.coverImage}
+          alt={data.coverImageAlt ?? `${data.title} ebook cover`}
+          width="640"
+          height="800"
+          loading="lazy"
+          class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        />
+      ) : (
+        <div class="flex h-full w-full items-center justify-center p-6 bg-stadium-glow">
+          <span class="font-display text-center text-2xl uppercase leading-tight text-brand-white/80">
+            {data.title}
+          </span>
+        </div>
+      )}
+      {data.placeholder && (
+        <span class="absolute left-2 top-2 bg-brand-black/80 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-brand-silver">
+          Sample listing
+        </span>
+      )}
+    </div>
+    <div class="flex flex-1 flex-col gap-3 p-5">
+      <UpdatedBadge />
+      <h3 class="font-display text-xl uppercase tracking-wide group-hover:text-brand-red transition-colors">
+        {data.title}
+      </h3>
+      <p class="text-sm text-brand-silver">by {data.creatorName}</p>
+      <ul class="mt-auto flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-brand-silver">
+        <li>{capitalize(data.category)}</li>
+        {data.playbook && <li>{data.playbook}</li>}
+        <li>{capitalize(data.difficulty)}</li>
+        <li>{data.lessonCount} lessons</li>
+        <li>{data.runtime}</li>
+      </ul>
+      <div class="flex items-center justify-between border-t border-brand-line pt-4">
+        <span class="font-mono text-lg font-medium">{formatPrice(data.price)}</span>
+        <span class="text-xs font-semibold uppercase tracking-wider text-brand-red">
+          View Ebook →
+        </span>
+      </div>
+    </div>
+  </a>
+</article>

@@ -1,0 +1,78 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../../components/ui/Breadcrumbs.astro";
+import SectionHeading from "../../../components/ui/SectionHeading.astro";
+
+const howItWorks = [
+  { title: "Apply", body: "Tell us about your Madden experience, achievements, content, and the product you want to build." },
+  { title: "Get reviewed", body: "Our team reviews every application. Approved creators receive a private invitation to the creator portal, applying does not automatically create an account." },
+  { title: "Build your ebook", body: "Upload video lessons, review auto-generated transcripts and written setups, add cover art, and preview your product exactly as customers will see it." },
+  { title: "Submit and earn", body: "Submit for review, respond to any change requests, and earn your revenue share on every sale, paid out through Stripe." },
+];
+
+const expectations = [
+  "You created, or have documented permission to use, everything in your product: video, audio, graphics, and written material.",
+  "Products teach complete, working setups, not recycled clips or thin content.",
+  "Setups are kept current: creators update products when patches change the meta.",
+  "Every AI-drafted written setup is reviewed and approved by you before it reaches customers.",
+];
+---
+
+<BaseLayout
+  title="Become A Madden Creator | Try This Play"
+  description="Apply to become a Try This Play creator: upload Madden 27 video lessons, publish structured written setups, and earn revenue from every sale."
+>
+  <Breadcrumbs
+    crumbs={[
+      { label: "Home", href: "/" },
+      { label: "Creators", href: "/creators/" },
+      { label: "Apply", href: "/creators/apply/" },
+    ]}
+  />
+
+  <section class="container-site py-12">
+    <SectionHeading
+      eyebrow="Creator Program"
+      title="Turn Your Madden Knowledge Into Income"
+      intro="Try This Play is an invitation-only creator marketplace. Apply below, and if approved you'll get access to a private portal with everything you need to build, submit, and sell premium video ebooks."
+    />
+
+    <ol class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {howItWorks.map((step, i) => (
+        <li class="card p-6">
+          <span class="font-mono text-sm text-brand-red">{String(i + 1).padStart(2, "0")}</span>
+          <h2 class="h-display mt-2 text-xl">{step.title}</h2>
+          <p class="mt-3 text-sm leading-relaxed text-brand-silver">{step.body}</p>
+        </li>
+      ))}
+    </ol>
+
+    <div class="mt-16 max-w-3xl">
+      <h2 class="h-display text-2xl">Quality and ownership expectations</h2>
+      <ul class="mt-5 space-y-3">
+        {expectations.map((item) => (
+          <li class="flex items-start gap-3 text-sm leading-relaxed text-brand-silver">
+            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 bg-brand-red" aria-hidden="true"></span>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="card mt-16 max-w-3xl p-8">
+      <h2 class="h-display text-2xl">Apply now</h2>
+      <p class="mt-3 text-sm leading-relaxed text-brand-silver">
+        Send your application through the contact form with the Creator
+        Application inquiry type. Include your gamertag, social profiles,
+        Discord username, Madden experience, competitive achievements, links to
+        content examples, your preferred product category, estimated audience
+        size, and a short product idea.
+      </p>
+      <p class="mt-3 text-sm leading-relaxed text-brand-silver">
+        A dedicated application form with structured fields ships with the
+        creator portal in the next release.
+      </p>
+      <a href="/contact/?inquiry=creator" class="btn-primary mt-6">Start Your Application</a>
+    </div>
+  </section>
+</BaseLayout>

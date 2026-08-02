@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  body {
+    @apply bg-brand-black text-brand-white font-body antialiased;
+  }
+  ::selection {
+    @apply bg-brand-red text-white;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-red ring-offset-2 ring-offset-brand-black;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .container-site {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .eyebrow {
+    @apply font-mono text-xs uppercase tracking-[0.25em] text-brand-red;
+  }
+  .h-display {
+    @apply font-display uppercase leading-[0.95] tracking-wide text-brand-white;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold uppercase tracking-wider text-sm transition-colors duration-150;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+  .btn-primary {
+    @apply btn bg-brand-red text-white hover:bg-brand-red-dark;
+  }
+  .btn-secondary {
+    @apply btn border border-brand-line bg-brand-panel text-brand-white hover:border-brand-silver;
+    clip-path: none;
+  }
+  .card {
+    @apply border border-brand-line bg-brand-panel transition-colors duration-150 hover:border-brand-red/60;
+  }
+  .diagonal-top {
+    clip-path: polygon(0 3rem, 100% 0, 100% 100%, 0 100%);
+  }
+}

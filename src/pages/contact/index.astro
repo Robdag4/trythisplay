@@ -1,0 +1,111 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
+import SectionHeading from "../../components/ui/SectionHeading.astro";
+import FaqList from "../../components/ui/FaqList.astro";
+import { SITE } from "../../data/site";
+
+const inquiryTypes = [
+  "General Support",
+  "Ebook Questions",
+  "Creator Application",
+  "Franchise Application",
+  "Partnership Inquiry",
+  "Technical Support",
+  "Refund or Billing Question",
+];
+
+const allFaqs = await getCollection("faqs");
+const faqs = allFaqs
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((f) => ({ question: f.data.question, answer: f.data.answer }));
+---
+
+<BaseLayout
+  title="Contact Us | Try This Play"
+  description="Contact Try This Play for ebook support, creator applications, franchise applications, billing questions, and partnership inquiries."
+>
+  <Breadcrumbs crumbs={[{ label: "Home", href: "/" }, { label: "Contact Us", href: "/contact/" }]} />
+
+  <section class="container-site grid gap-12 py-12 lg:grid-cols-[1fr_360px]">
+    <div>
+      <SectionHeading
+        eyebrow="Support"
+        title="Contact Us"
+        intro="Send us a message and we'll get back to you, typically within one to two business days."
+      />
+
+      <!-- Phase 2 wires this form to a server endpoint with validation, spam
+           protection, rate limiting, and admin email notification. Until then
+           it submits via mailto as a functional fallback. -->
+      <form
+        class="mt-10 grid max-w-xl gap-5"
+        method="get"
+        action={`mailto:${SITE.supportEmail}`}
+        enctype="text/plain"
+      >
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="name" class="block text-sm font-semibold">Name</label>
+            <input id="name" name="name" type="text" required autocomplete="name"
+              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+          </div>
+          <div>
+            <label for="email" class="block text-sm font-semibold">Email</label>
+            <input id="email" name="email" type="email" required autocomplete="email"
+              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+          </div>
+        </div>
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label for="gamertag" class="block text-sm font-semibold">Gamertag</label>
+            <input id="gamertag" name="gamertag" type="text"
+              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+          </div>
+          <div>
+            <label for="inquiry" class="block text-sm font-semibold">Inquiry type</label>
+            <select id="inquiry" name="inquiry" required
+              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">
+              {inquiryTypes.map((t) => <option value={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="order" class="block text-sm font-semibold">
+            Order number <span class="font-normal text-brand-silver">(if applicable)</span>
+          </label>
+          <input id="order" name="order" type="text"
+            class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+        </div>
+        <div>
+          <label for="message" class="block text-sm font-semibold">Message</label>
+          <textarea id="message" name="message" rows="6" required
+            class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red"></textarea>
+        </div>
+        <button type="submit" class="btn-primary w-fit">Send Message</button>
+      </form>
+    </div>
+
+    <aside class="space-y-6">
+      <div class="card p-6">
+        <h2 class="h-display text-xl">Direct support</h2>
+        <p class="mt-3 text-sm text-brand-silver">
+          Email us at
+          <a href={`mailto:${SITE.supportEmail}`} class="text-brand-red hover:underline">
+            {SITE.supportEmail}
+          </a>
+        </p>
+        <p class="mt-2 text-sm text-brand-silver">
+          For fastest answers on league questions, ask in the relevant Discord server.
+        </p>
+      </div>
+      <div class="card p-6">
+        <h2 class="h-display text-xl">Common questions</h2>
+        <div class="mt-4">
+          <FaqList items={faqs.slice(0, 4)} withSchema={false} />
+        </div>
+      </div>
+    </aside>
+  </section>
+</BaseLayout>

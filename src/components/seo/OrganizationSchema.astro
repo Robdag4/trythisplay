@@ -1,0 +1,14 @@
+---
+import { SITE } from "../../data/site";
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE.name,
+  url: SITE.url,
+  logo: `${SITE.url}/logo.png`,
+  email: SITE.supportEmail,
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />

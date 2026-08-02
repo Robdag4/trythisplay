@@ -1,0 +1,65 @@
+---
+import LeaguePage from "../../components/franchise/LeaguePage.astro";
+---
+
+<LeaguePage
+  slug="competitive"
+  title="Competitive Franchise"
+  seoTitle="Madden 27 Competitive Franchise League | Try This Play"
+  description="Join the Try This Play Madden 27 Competitive Franchise: advanced rules, scheduled user games, rankings, standings, tournaments, and seasonal champions."
+  applyLabel="Apply For Competitive Franchise"
+  intro="The Competitive Franchise is built for players who want serious head-to-head Madden 27. Every game is a scheduled user matchup played under an advanced competitive rule set, with rankings, standings, tournaments, and a seasonal champion crowned at the end of each cycle."
+  rules={[
+    "All league games are user versus user and must be played within the scheduled advance window.",
+    "The competitive rule set governs play calling, no banned exploits, glitches, or unrealistic repeat-play abuse.",
+    "Quitting or dashboarding a league game without commissioner approval results in a forfeit.",
+    "Disputes are reported in the Discord dispute channel with video evidence where possible.",
+    "Repeated rule violations lead to removal from the league.",
+  ]}
+  featureGroups={[
+    {
+      heading: "Competition",
+      items: [
+        "Scheduled user games every advance",
+        "Season standings and rankings",
+        "Playoff race and seasonal champion",
+        "Tournaments between seasons",
+      ],
+    },
+    {
+      heading: "Community",
+      items: [
+        "Dedicated Competitive Discord server",
+        "Matchmaking and scrimmage channels",
+        "Strategy discussion with other members",
+        "League announcements and results",
+      ],
+    },
+    {
+      heading: "Structure",
+      items: [
+        "Commissioner-managed advances",
+        "Advanced competitive rule set",
+        "Entry review for skill fit",
+        "Team selection from available franchises",
+      ],
+    },
+  ]}
+  faqs={[
+    {
+      question: "What skill level do I need for the Competitive Franchise?",
+      answer:
+        "The league is aimed at advanced players comfortable with user games, hot routes, and pre-snap adjustments. If you are newer, start with our beginner ebooks and guides, then apply when you are winning consistently online.",
+    },
+    {
+      question: "How often do games advance?",
+      answer:
+        "Advance schedules are set by the commissioners each season and announced in Discord. Games must be completed within the advance window or scheduled with your opponent in the matchmaking channels.",
+    },
+    {
+      question: "How do I get my team?",
+      answer:
+        "After your application is approved, you pick from the available teams list in Discord on a first-approved, first-pick basis.",
+    },
+  ]}
+/>

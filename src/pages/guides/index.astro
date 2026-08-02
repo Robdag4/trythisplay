@@ -1,0 +1,57 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
+import SectionHeading from "../../components/ui/SectionHeading.astro";
+import { formatDate, capitalize } from "../../lib/format";
+
+const guides = (await getCollection("guides", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime()
+);
+
+const categories = ["offense", "defense", "franchise", "beginners", "advanced"];
+---
+
+<BaseLayout
+  title="Free Madden 27 Strategy Guides | Try This Play"
+  description="Free Madden 27 strategy guides: beating coverages, choosing playbooks, blitz protection, passing and running fundamentals, and franchise mode strategy."
+>
+  <Breadcrumbs crumbs={[{ label: "Home", href: "/" }, { label: "Guides", href: "/guides/" }]} />
+
+  <section class="container-site py-12">
+    <SectionHeading
+      eyebrow="Free Content"
+      title="Madden 27 Strategy Guides"
+      intro="Written by our team and creators, reviewed for the current patch, and updated as the meta changes. When you're ready to go deeper, every guide links to related ebooks."
+    />
+
+    <nav aria-label="Guide categories" class="mt-8 flex flex-wrap gap-2">
+      {categories.map((c) => (
+        <span class="border border-brand-line bg-brand-panel px-4 py-2 font-mono text-xs uppercase tracking-wider text-brand-silver">
+          {capitalize(c)}
+        </span>
+      ))}
+    </nav>
+
+    <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {guides.map((guide) => (
+        <article class="card group p-6">
+          <a href={`/guides/${guide.slug}/`} class="flex h-full flex-col">
+            <span class="font-mono text-xs uppercase tracking-wider text-brand-red">
+              {capitalize(guide.data.category)}
+            </span>
+            <h2 class="h-display mt-2 text-2xl group-hover:text-brand-red transition-colors">
+              {guide.data.title}
+            </h2>
+            <p class="mt-3 flex-1 text-sm leading-relaxed text-brand-silver">
+              {guide.data.description}
+            </p>
+            <p class="mt-4 border-t border-brand-line pt-4 font-mono text-xs text-brand-silver">
+              Updated {formatDate(guide.data.updatedAt)} · {guide.data.currentMaddenVersion}
+            </p>
+          </a>
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

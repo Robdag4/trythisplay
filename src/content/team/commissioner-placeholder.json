@@ -1,0 +1,8 @@
+{
+  "name": "Add Commissioner Name",
+  "role": "Franchise Commissioner",
+  "group": "commissioners",
+  "bio": "Placeholder entry for a franchise commissioner profile.",
+  "placeholder": true,
+  "order": 2
+}

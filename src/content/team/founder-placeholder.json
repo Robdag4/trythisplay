@@ -1,0 +1,8 @@
+{
+  "name": "Add Founder Name",
+  "role": "Founder",
+  "group": "founders",
+  "bio": "Placeholder entry. Add the real founder's biography, gamertag, and photo in src/content/team/. Placeholder entries render with a clear 'coming soon' treatment and are never presented as real people.",
+  "placeholder": true,
+  "order": 1
+}

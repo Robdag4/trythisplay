@@ -1,0 +1,82 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
+import FranchiseCard from "../../components/franchise/FranchiseCard.astro";
+import SectionHeading from "../../components/ui/SectionHeading.astro";
+
+const comparison = [
+  ["Gameplay Style", "High-level competitive", "Realistic NFL-style"],
+  ["Main Focus", "Winning and rankings", "Team building and realism"],
+  ["Skill Level", "Advanced", "Moderate to advanced"],
+  ["League Rules", "Competitive rule set", "Simulation rule set"],
+  ["Trades", "Competitive settings", "Reviewed for realism"],
+  ["Discord", "Competitive server", "Simulation server"],
+  ["Content", "Rankings and tournaments", "Power rankings and franchise stories"],
+];
+---
+
+<BaseLayout
+  title="Madden 27 Franchise Leagues: Competitive & Simulation | Try This Play"
+  description="Join a Madden 27 franchise community: a competitive league with rankings and tournaments, or a realistic simulation league with trades, salary cap, and drafts."
+>
+  <Breadcrumbs crumbs={[{ label: "Home", href: "/" }, { label: "Franchise", href: "/franchise/" }]} />
+
+  <section class="container-site py-12">
+    <SectionHeading
+      eyebrow="Franchise Communities"
+      title="Find Your League"
+      intro="Try This Play runs two Madden 27 franchise communities with separate Discord servers, rule sets, and commissioners. Pick the one that matches how you play."
+    />
+
+    <div class="mt-12 grid gap-6 lg:grid-cols-2">
+      <FranchiseCard
+        eyebrow="Ranked Competition"
+        title="Competitive Franchise"
+        features={[
+          "Advanced rule set built for user games",
+          "Rankings, standings, and leaderboards",
+          "Tournaments and seasonal champions",
+          "Scheduled head-to-head games",
+          "Competitive Discord community",
+        ]}
+        cta="Apply For Competitive Franchise"
+        href="/franchise/competitive/"
+      />
+      <FranchiseCard
+        eyebrow="Realistic Team Building"
+        title="Simulation Franchise"
+        features={[
+          "NFL-style gameplay and sim rules",
+          "Trades reviewed for realism",
+          "Salary cap and draft strategy",
+          "Player development and weekly advances",
+          "Power rankings and league stories",
+        ]}
+        cta="Apply For Simulation Franchise"
+        href="/franchise/simulation/"
+      />
+    </div>
+
+    <div class="mt-16 overflow-x-auto">
+      <h2 class="h-display text-2xl">Compare the leagues</h2>
+      <table class="mt-6 w-full min-w-[640px] border border-brand-line text-sm">
+        <thead>
+          <tr class="bg-brand-panel text-left">
+            <th scope="col" class="border-b border-brand-line p-4 font-mono text-xs uppercase tracking-wider text-brand-silver">Feature</th>
+            <th scope="col" class="border-b border-l border-brand-line p-4 font-mono text-xs uppercase tracking-wider text-brand-red">Competitive</th>
+            <th scope="col" class="border-b border-l border-brand-line p-4 font-mono text-xs uppercase tracking-wider text-brand-white">Simulation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {comparison.map(([feature, comp, sim]) => (
+            <tr class="border-b border-brand-line last:border-b-0">
+              <th scope="row" class="p-4 text-left font-semibold">{feature}</th>
+              <td class="border-l border-brand-line p-4 text-brand-silver">{comp}</td>
+              <td class="border-l border-brand-line p-4 text-brand-silver">{sim}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>

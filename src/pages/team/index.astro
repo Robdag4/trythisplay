@@ -1,0 +1,76 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
+import SectionHeading from "../../components/ui/SectionHeading.astro";
+
+const members = (await getCollection("team")).sort((a, b) => a.data.order - b.data.order);
+
+const groupLabels: Record<string, string> = {
+  founders: "Founders",
+  administrators: "Administrators",
+  commissioners: "Franchise Commissioners",
+  "competitive-players": "Competitive Players",
+  "simulation-experts": "Simulation Experts",
+  creators: "Ebook Creators",
+  "content-team": "Content Team",
+  "support-team": "Support Team",
+};
+
+const groups = [...new Set(members.map((m) => m.data.group))];
+---
+
+<BaseLayout
+  title="Meet The Team | Try This Play"
+  description="Meet the founders, commissioners, creators, and staff behind Try This Play's Madden 27 ebooks and franchise communities."
+>
+  <Breadcrumbs crumbs={[{ label: "Home", href: "/" }, { label: "Meet The Team", href: "/team/" }]} />
+
+  <section class="container-site py-12">
+    <SectionHeading
+      eyebrow="The People"
+      title="Meet The Team"
+      intro="The founders, commissioners, creators, and support staff who run the platform and both franchise leagues."
+    />
+
+    {groups.map((group) => {
+      const groupMembers = members.filter((m) => m.data.group === group);
+      return (
+        <div class="mt-14">
+          <h2 class="h-display text-2xl">{groupLabels[group]}</h2>
+          <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {groupMembers.map(({ data: m }) => (
+              <article class="card p-6" class:list={[m.placeholder && "border-dashed"]}>
+                {m.placeholder ? (
+                  <p class="font-mono text-xs uppercase tracking-wider text-brand-silver">
+                    Profile coming soon
+                  </p>
+                ) : (
+                  m.photo && (
+                    <img
+                      src={m.photo}
+                      alt={`Photo of ${m.name}`}
+                      width="96"
+                      height="96"
+                      loading="lazy"
+                      class="h-24 w-24 border border-brand-line object-cover"
+                    />
+                  )
+                )}
+                <h3 class="h-display mt-3 text-xl">{m.name}</h3>
+                {m.gamertag && <p class="font-mono text-sm text-brand-red">{m.gamertag}</p>}
+                <p class="mt-1 text-sm font-semibold text-brand-silver">{m.role}</p>
+                <p class="mt-3 text-sm leading-relaxed text-brand-silver">{m.bio}</p>
+                {m.favoritePlaybook && (
+                  <p class="mt-3 font-mono text-xs text-brand-silver">
+                    Favorite playbook: {m.favoritePlaybook}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        </div>
+      );
+    })}
+  </section>
+</BaseLayout>

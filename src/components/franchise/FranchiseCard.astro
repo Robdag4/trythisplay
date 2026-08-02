@@ -1,0 +1,25 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  features: string[];
+  cta: string;
+  href: string;
+}
+const { eyebrow, title, features, cta, href } = Astro.props;
+---
+
+<article class="card relative overflow-hidden p-8">
+  <div class="absolute inset-x-0 top-0 h-1 bg-brand-red" aria-hidden="true"></div>
+  <p class="eyebrow">{eyebrow}</p>
+  <h3 class="h-display mt-2 text-3xl">{title}</h3>
+  <ul class="mt-6 grid gap-2 text-sm text-brand-silver sm:grid-cols-2">
+    {features.map((f) => (
+      <li class="flex items-start gap-2">
+        <span class="mt-1.5 h-1.5 w-1.5 shrink-0 bg-brand-red" aria-hidden="true"></span>
+        <span>{f}</span>
+      </li>
+    ))}
+  </ul>
+  <a href={href} class="btn-primary mt-8">{cta}</a>
+</article>

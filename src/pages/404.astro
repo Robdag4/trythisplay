@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Page Not Found | Try This Play"
+  description="The page you're looking for doesn't exist."
+  noindex={true}
+>
+  <section class="container-site flex min-h-[60vh] flex-col items-center justify-center py-12 text-center">
+    <p class="eyebrow">Incomplete Pass</p>
+    <h1 class="h-display mt-3 text-6xl">404</h1>
+    <p class="mt-4 max-w-md text-brand-silver">
+      This page doesn't exist. Check the URL, or head back to a live route.
+    </p>
+    <div class="mt-8 flex gap-4">
+      <a href="/" class="btn-primary">Go Home</a>
+      <a href="/ebooks/" class="btn-secondary">Browse Ebooks</a>
+    </div>
+  </section>
+</BaseLayout>
