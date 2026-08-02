@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import vercel from "@astrojs/vercel";
 import tailwind from "@astrojs/tailwind";
 import sitemap from "@astrojs/sitemap";
 
@@ -22,4 +23,5 @@ export default defineConfig({
   // admin) are added in Phase 2+, switch to `output: "static"` with
   // `export const prerender = false` on private routes and add the
   // Vercel or Cloudflare adapter.
+  adapter: vercel(),
 });

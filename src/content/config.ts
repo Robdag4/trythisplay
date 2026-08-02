@@ -71,6 +71,7 @@ const ebooks = defineCollection({
           runtime: z.string(),
           description: z.string().optional(),
           freePreview: z.boolean().default(false),
+          playbackId: z.string().optional(), // Mux playback ID, set when video is uploaded
         })
       )
       .default([]),

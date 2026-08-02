@@ -1,5 +1,21 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getUser } from "../lib/auth";
+
+export const prerender = false;
+
+const { user } = await getUser(Astro.request, Astro.cookies);
+if (user) return Astro.redirect("/library/");
+
+const sent = Astro.url.searchParams.has("sent");
+const error = Astro.url.searchParams.get("error");
+const next = Astro.url.searchParams.get("next") ?? "/library/";
+
+const errorMessages: Record<string, string> = {
+  "invalid-email": "Enter a valid email address.",
+  "send-failed": "We couldn't send the link. Try again in a minute.",
+  "link-expired": "That sign-in link expired or was already used. Request a new one.",
+};
 ---
 
 <BaseLayout
@@ -8,14 +24,48 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   noindex={true}
 >
   <section class="container-site flex min-h-[60vh] items-center justify-center py-12">
-    <div class="card w-full max-w-md p-8 text-center">
+    <div class="card w-full max-w-md p-8">
       <h1 class="h-display text-3xl">Customer Login</h1>
-      <p class="mt-4 text-sm leading-relaxed text-brand-silver">
-        Customer accounts, checkout, and your private ebook library launch with
-        the commerce release. Sign-in will use secure email authentication
-        through Supabase.
+
+      {sent ? (
+        <div class="mt-5 border border-brand-red/50 bg-brand-red/10 p-4 text-sm leading-relaxed">
+          Check your email. We sent you a secure sign-in link — click it on this
+          device and you'll land in your library. The link expires after one use.
+        </div>
+      ) : (
+        <>
+          <p class="mt-4 text-sm leading-relaxed text-brand-silver">
+            No passwords here. Enter your email and we'll send you a secure
+            one-click sign-in link.
+          </p>
+          {error && (
+            <p class="mt-4 border border-brand-red/50 bg-brand-red/10 p-3 text-sm">
+              {errorMessages[error] ?? "Something went wrong. Try again."}
+            </p>
+          )}
+          <form method="POST" action="/api/auth/login" class="mt-6 grid gap-4">
+            <input type="hidden" name="next" value={next} />
+            <div>
+              <label for="email" class="block text-sm font-semibold">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="you@example.com"
+                class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red"
+              />
+            </div>
+            <button type="submit" class="btn-primary w-full">Send Sign-In Link</button>
+          </form>
+        </>
+      )}
+
+      <p class="mt-6 border-t border-brand-line pt-5 text-xs leading-relaxed text-brand-silver">
+        First time here? Purchasing an ebook creates your account automatically —
+        just sign in with the same email you use at checkout.
       </p>
-      <a href="/ebooks/" class="btn-primary mt-6 w-full">Browse Ebooks</a>
     </div>
   </section>
 </BaseLayout>
