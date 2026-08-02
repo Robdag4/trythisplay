@@ -22,7 +22,13 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
   });
 
   if (error) {
-    console.error("signInWithOtp failed:", error.message);
+    console.error("signInWithOtp failed:", error.status, error.message);
+    // Distinguish Supabase's email rate limit (429 / "rate limit") from other
+    // send failures so the user gets an accurate message.
+    const msg = error.message?.toLowerCase() ?? "";
+    if (error.status === 429 || msg.includes("rate limit") || msg.includes("too many")) {
+      return redirect("/login/?error=rate-limit");
+    }
     return redirect("/login/?error=send-failed");
   }
   return redirect("/login/?sent=1");

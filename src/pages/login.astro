@@ -14,6 +14,7 @@ const next = Astro.url.searchParams.get("next") ?? "/library/";
 const errorMessages: Record<string, string> = {
   "invalid-email": "Enter a valid email address.",
   "send-failed": "We couldn't send the link. Try again in a minute.",
+  "rate-limit": "Too many sign-in emails were requested. Please wait a few minutes and try again.",
   "link-expired": "That sign-in link expired or was already used. Request a new one.",
 };
 ---
