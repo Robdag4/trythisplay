@@ -12,7 +12,7 @@ import { EBOOK_CATEGORIES } from "../../data/site";
  */
 export async function getStaticPaths() {
   const ebooks = await getCollection("ebooks");
-  const categorySlugs = new Set(EBOOK_CATEGORIES.map((c) => c.slug));
+  const categorySlugs = new Set<string>(EBOOK_CATEGORIES.map((c) => c.slug));
 
   const productPaths = ebooks
     .filter((e) => !categorySlugs.has(e.slug))
