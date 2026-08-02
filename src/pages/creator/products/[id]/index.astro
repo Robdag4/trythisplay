@@ -304,6 +304,24 @@ const statusChip: Record<string, string> = {
         el.addEventListener("input", update);
         el.addEventListener("change", update);
       });
+
+      // Cover: preview the picked file immediately (thumbnail, marketplace
+      // card, and product-page iframe). The actual upload happens on Save.
+      const coverInput = document.getElementById("cover");
+      if (coverInput) {
+        coverInput.addEventListener("change", () => {
+          const f = coverInput.files && coverInput.files[0];
+          if (!f || !f.type.startsWith("image/")) return;
+          const url = URL.createObjectURL(f);
+          const imgHtml = '<img src="' + url + '" alt="Cover preview" class="h-full w-full object-cover">';
+          const thumb = document.getElementById("cover-thumb");
+          if (thumb) thumb.innerHTML = imgHtml;
+          document.querySelectorAll('[data-card="cover-slot"]').forEach((el) => {
+            el.innerHTML = imgHtml;
+          });
+          send("cover", url);
+        });
+      }
     })();
   </script>
 </BaseLayout>

@@ -58,23 +58,44 @@ const hasWtif = data.whoThisIsFor.length > 0;
 
   <!-- Product header -->
   <section class="container-site grid gap-10 py-12 lg:grid-cols-[380px_1fr]">
-    <div class="relative mx-auto w-full max-w-sm">
-      <div class="aspect-[4/5] border border-brand-line bg-brand-charcoal bg-stadium-glow shadow-[0_0_60px_-20px_rgba(225,29,46,0.4)]">
-        {data.coverImage ? (
-          <img
-            src={data.coverImage}
-            alt={data.coverImageAlt ?? `${data.title} ebook cover`}
-            width="640"
-            height="800"
-            class="h-full w-full object-cover"
-          />
-        ) : (
-          <div class="flex h-full items-center justify-center p-8">
-            <span class="font-display text-center text-3xl uppercase leading-tight text-brand-white/80" data-page="cover-title">
-              {data.title}
-            </span>
+    <!-- 3D book mockup: the cover rendered on an angled hardcover with a page
+         block and spine sheen, like a stock ebook display. -->
+    <div class="relative mx-auto w-full max-w-sm py-4" style="perspective: 1400px;">
+      <div class="relative mx-auto aspect-[4/5] w-full max-w-[320px]" style="transform-style: preserve-3d; transform: rotateY(-18deg);">
+        <!-- Page block along the right edge -->
+        <div
+          aria-hidden="true"
+          style="position: absolute; top: 1.5%; bottom: 1.5%; right: -14px; width: 14px; border-radius: 0 3px 3px 0; transform: rotateY(38deg); transform-origin: left center; background: linear-gradient(to right, #efece4 0%, #cfccc2 12%, #f6f4ee 28%, #cfccc2 44%, #f6f4ee 62%, #cfccc2 78%, #f6f4ee 90%, #b9b6ac 100%);"
+        ></div>
+        <!-- Front cover -->
+        <div
+          class="absolute inset-0 overflow-hidden border border-brand-line bg-brand-charcoal bg-stadium-glow"
+          style="border-radius: 3px 8px 8px 3px; box-shadow: -22px 28px 60px -20px rgba(0,0,0,0.8), 0 0 60px -20px rgba(225,29,46,0.4);"
+        >
+          <div data-page="cover-slot" class="absolute inset-0">
+            {data.coverImage ? (
+              <img
+                src={data.coverImage}
+                alt={data.coverImageAlt ?? `${data.title} ebook cover`}
+                width="640"
+                height="800"
+                class="h-full w-full object-cover"
+              />
+            ) : (
+              <div class="flex h-full items-center justify-center p-8">
+                <span class="font-display text-center text-3xl uppercase leading-tight text-brand-white/80" data-page="cover-title">
+                  {data.title}
+                </span>
+              </div>
+            )}
           </div>
-        )}
+          <!-- Spine sheen -->
+          <div
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-0"
+            style="background: linear-gradient(90deg, rgba(255,255,255,0.16) 0%, rgba(0,0,0,0.30) 2.5%, rgba(255,255,255,0.10) 5.5%, rgba(255,255,255,0) 10%);"
+          ></div>
+        </div>
       </div>
     </div>
 

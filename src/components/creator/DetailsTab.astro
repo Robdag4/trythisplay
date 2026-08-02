@@ -36,15 +36,17 @@ const authorValue = product.author_name ?? creatorName ?? "";
     <span class="block text-sm font-semibold">Cover image</span>
     <div class="mt-2 flex items-start gap-4">
       <div class="aspect-[4/5] w-28 shrink-0 overflow-hidden border border-brand-line bg-brand-charcoal">
-        {product.cover_image_url ? (
-          <img src={product.cover_image_url} alt={product.cover_image_alt ?? "Cover"} class="h-full w-full object-cover" />
-        ) : (
-          <div class="flex h-full w-full items-center justify-center p-2 text-center text-[10px] text-brand-silver">No cover</div>
-        )}
+        <div id="cover-thumb" class="h-full w-full">
+          {product.cover_image_url ? (
+            <img src={product.cover_image_url} alt={product.cover_image_alt ?? "Cover"} class="h-full w-full object-cover" />
+          ) : (
+            <div class="flex h-full w-full items-center justify-center p-2 text-center text-[10px] text-brand-silver">No cover</div>
+          )}
+        </div>
       </div>
       <div class="flex-1">
         <input id="cover" name="cover" type="file" accept="image/jpeg,image/png,image/webp"
-          class="w-full text-sm text-brand-silver file:mr-3 file:border file:border-brand-line file:bg-brand-panel file:px-3 file:py-2 file:text-sm" />
+          class="w-full text-sm text-brand-silver file:mr-3 file:cursor-pointer file:border file:border-brand-line file:bg-brand-panel file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-white hover:file:border-brand-red" />
         <p class="mt-1 text-xs text-brand-silver">4:5 portrait, JPG/PNG/WebP, under 3&nbsp;MB. Alt text is generated from your title.</p>
       </div>
     </div>

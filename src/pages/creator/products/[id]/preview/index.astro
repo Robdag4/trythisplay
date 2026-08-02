@@ -103,6 +103,19 @@ const embed = Astro.url.searchParams.get("embed") === "1";
           case "wtif":
             setList("wtif", v);
             break;
+          case "cover": {
+            // v is a blob: URL created by the editor for the freshly-picked
+            // file; the real upload happens on Save.
+            document.querySelectorAll('[data-page="cover-slot"]').forEach((el) => {
+              el.innerHTML = "";
+              const img = document.createElement("img");
+              img.src = v;
+              img.alt = "Cover preview";
+              img.className = "h-full w-full object-cover";
+              el.appendChild(img);
+            });
+            break;
+          }
           case "overview": {
             // Simple paragraph rendering while typing; the saved version
             // renders full markdown server-side.

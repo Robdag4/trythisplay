@@ -14,22 +14,24 @@ const { data } = ebook;
 <article class="card group flex flex-col">
   <a href={`/ebooks/${ebook.slug}/`} class="flex flex-1 flex-col">
     <div class="relative aspect-[4/5] overflow-hidden border-b border-brand-line bg-brand-charcoal">
-      {data.coverImage ? (
-        <img
-          src={data.coverImage}
-          alt={data.coverImageAlt ?? `${data.title} ebook cover`}
-          width="640"
-          height="800"
-          loading="lazy"
-          class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-        />
-      ) : (
-        <div class="flex h-full w-full items-center justify-center p-6 bg-stadium-glow">
-          <span class="font-display text-center text-2xl uppercase leading-tight text-brand-white/80">
-            {data.title}
-          </span>
-        </div>
-      )}
+      <div data-card="cover-slot" class="absolute inset-0">
+        {data.coverImage ? (
+          <img
+            src={data.coverImage}
+            alt={data.coverImageAlt ?? `${data.title} ebook cover`}
+            width="640"
+            height="800"
+            loading="lazy"
+            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div class="flex h-full w-full items-center justify-center p-6 bg-stadium-glow">
+            <span class="font-display text-center text-2xl uppercase leading-tight text-brand-white/80">
+              {data.title}
+            </span>
+          </div>
+        )}
+      </div>
       {data.placeholder && (
         <span class="absolute left-2 top-2 bg-brand-black/80 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-brand-silver">
           Sample listing
