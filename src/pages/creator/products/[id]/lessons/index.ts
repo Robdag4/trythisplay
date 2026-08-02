@@ -36,12 +36,14 @@ export const POST: APIRoute = async ({ params, request, cookies, redirect }) => 
     .maybeSingle();
   const sortOrder = (last?.sort_order ?? -1) + 1;
 
-  await admin.from("lessons").insert({
+  const { data: created } = await admin.from("lessons").insert({
     product_id: id,
     title,
     sort_order: sortOrder,
     status: "uploading",
-  });
+  }).select("id").single();
 
+  // #7: after creating, drop the creator straight into the lesson editor.
+  if (created?.id) return redirect(`${path}lessons/${created.id}/`);
   return redirect(`${path}?tab=lessons`);
 };

@@ -1,0 +1,25 @@
+---
+export const prerender = false;
+
+import ProductPage from "../../../../../components/ebooks/ProductPage.astro";
+import { requireCreator } from "../../../../../lib/creator";
+import { getProductByIdAdmin } from "../../../../../lib/products";
+
+const { id } = Astro.params;
+const path = `/creator/products/${id}/`;
+const guard = await requireCreator(Astro.request, Astro.cookies, path);
+if (!guard.ok) {
+  if (guard.redirect?.startsWith("/login")) return Astro.redirect(guard.redirect);
+  return Astro.redirect("/creator/");
+}
+
+const ebook = await getProductByIdAdmin(id!);
+if (!ebook || ebook.data.creatorId !== guard.creator.id) return Astro.redirect("/creator/");
+---
+
+<div class="fixed left-0 right-0 top-0 z-50 bg-brand-red px-4 py-2 text-center text-xs font-bold uppercase tracking-widest text-white">
+  Draft preview — not live · <a href={`/creator/products/${id}/`} class="underline">back to editor</a>
+</div>
+<div class="pt-9">
+  <ProductPage {ebook} draftPreview={true} />
+</div>

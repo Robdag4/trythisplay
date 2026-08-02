@@ -10,11 +10,16 @@ import Mux from "@mux/mux-node";
 //   MUX_SIGNING_KEY_ID, MUX_SIGNING_KEY_PRIVATE — mint signed playback JWTs
 // ============================================================================
 
-const TOKEN_ID = import.meta.env.MUX_TOKEN_ID as string | undefined;
-const TOKEN_SECRET = import.meta.env.MUX_TOKEN_SECRET as string | undefined;
-export const MUX_WEBHOOK_SECRET = import.meta.env.MUX_WEBHOOK_SECRET as string | undefined;
-const SIGNING_KEY_ID = import.meta.env.MUX_SIGNING_KEY_ID as string | undefined;
-const SIGNING_KEY_PRIVATE = import.meta.env.MUX_SIGNING_KEY_PRIVATE as string | undefined;
+// Prefer runtime process.env (Vercel serverless), fall back to build-time inline.
+const env = (k: string): string | undefined =>
+  (import.meta.env[k] as string | undefined) ??
+  (typeof process !== "undefined" ? process.env[k] : undefined);
+
+const TOKEN_ID = env("MUX_TOKEN_ID");
+const TOKEN_SECRET = env("MUX_TOKEN_SECRET");
+export const MUX_WEBHOOK_SECRET = env("MUX_WEBHOOK_SECRET");
+const SIGNING_KEY_ID = env("MUX_SIGNING_KEY_ID");
+const SIGNING_KEY_PRIVATE = env("MUX_SIGNING_KEY_PRIVATE");
 
 export const muxConfigured = Boolean(TOKEN_ID && TOKEN_SECRET);
 export const muxSigningConfigured = Boolean(SIGNING_KEY_ID && SIGNING_KEY_PRIVATE);

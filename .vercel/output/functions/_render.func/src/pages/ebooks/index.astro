@@ -1,0 +1,52 @@
+---
+// Server-rendered: reads the published catalog from the DB (Phase 3 switchover).
+export const prerender = false;
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
+import EbookCard from "../../components/ebooks/EbookCard.astro";
+import SectionHeading from "../../components/ui/SectionHeading.astro";
+import { EBOOK_CATEGORIES } from "../../data/site";
+import { getPublishedProducts } from "../../lib/products";
+
+const ebooks = await getPublishedProducts();
+---
+
+<BaseLayout
+  title="Madden 27 Ebooks & Video Strategy Guides | Try This Play"
+  description="Browse Madden 27 video ebooks: offensive schemes, defensive systems, and franchise guides with video lessons, written setups, audibles, and coverage beaters."
+>
+  <Breadcrumbs crumbs={[{ label: "Home", href: "/" }, { label: "Ebooks", href: "/ebooks/" }]} />
+
+  <section class="container-site py-12">
+    <SectionHeading
+      eyebrow="The Marketplace"
+      title="Madden 27 Ebooks"
+      intro="Every product includes video lessons, structured written setups, audibles, reads, adjustments, blitz counters, transcripts, and future updates."
+    />
+
+    <!-- Category navigation. Interactive filtering ships as a React island in
+         Phase 2; filter query URLs will be noindexed and excluded from the sitemap. -->
+    <nav aria-label="Ebook categories" class="mt-10 flex flex-wrap gap-2">
+      {EBOOK_CATEGORIES.map((c) => (
+        <a
+          href={`/ebooks/${c.slug}/`}
+          class="border border-brand-line bg-brand-panel px-4 py-2 text-xs font-semibold uppercase tracking-wider text-brand-silver transition-colors hover:border-brand-red hover:text-brand-white"
+        >
+          {c.label}
+        </a>
+      ))}
+    </nav>
+
+    {ebooks.length > 0 ? (
+      <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {ebooks.map((ebook) => <EbookCard {ebook} />)}
+      </div>
+    ) : (
+      <p class="mt-12 border border-brand-line bg-brand-panel p-8 text-brand-silver">
+        The launch catalog is in review. Check back soon, or apply to become a
+        creator and sell your own Madden 27 products.
+      </p>
+    )}
+  </section>
+</BaseLayout>

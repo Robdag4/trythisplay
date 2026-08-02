@@ -1,0 +1,84 @@
+---
+// Server-rendered: creator profile copy still comes from the content collection
+// (public profiles until real creators exist), but the published-product listing
+// reads from the DB (Phase 3).
+export const prerender = false;
+
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
+import EbookCard from "../../components/ebooks/EbookCard.astro";
+import { getPublishedProductsByCreator } from "../../lib/products";
+
+const { slug } = Astro.params;
+const creators = await getCollection("creators");
+const creator = creators.find((c) => c.slug === slug);
+if (!creator) return Astro.redirect("/404/", 404);
+const { data } = creator;
+
+// Match products either by the creator's DB id or by profile slug (transitional).
+const ebooks = await getPublishedProductsByCreator(creator.slug);
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  mainEntity: {
+    "@type": "Person",
+    name: data.name,
+    alternateName: data.gamertag,
+    description: data.bio,
+  },
+};
+---
+
+<BaseLayout
+  title={`${data.name} | Madden Creator | Try This Play`}
+  description={data.bio}
+  ogType="profile"
+  noindex={data.placeholder}
+>
+  <Fragment slot="head">
+    {!data.placeholder && (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    )}
+  </Fragment>
+
+  <Breadcrumbs
+    crumbs={[
+      { label: "Home", href: "/" },
+      { label: "Creators", href: "/creators/" },
+      { label: data.name, href: `/creators/${creator.slug}/` },
+    ]}
+  />
+
+  <section class="container-site py-12">
+    {data.placeholder && (
+      <p class="mb-6 w-fit border border-dashed border-brand-line bg-brand-panel px-4 py-2 font-mono text-xs uppercase tracking-wider text-brand-silver">
+        Sample profile · replaced with a real creator at launch
+      </p>
+    )}
+    <p class="eyebrow">Creator Profile</p>
+    <h1 class="h-display mt-2 text-4xl sm:text-5xl">{data.name}</h1>
+    <p class="mt-2 font-mono text-lg text-brand-red">{data.gamertag}</p>
+    <p class="mt-4 max-w-3xl leading-relaxed text-brand-silver">{data.bio}</p>
+
+    {data.specialties.length > 0 && (
+      <ul class="mt-6 flex flex-wrap gap-2">
+        {data.specialties.map((s) => (
+          <li class="border border-brand-line bg-brand-panel px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-brand-silver">
+            {s}
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <h2 class="h-display mt-16 text-2xl">Published ebooks</h2>
+    {ebooks.length > 0 ? (
+      <div class="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {ebooks.map((ebook) => <EbookCard {ebook} />)}
+      </div>
+    ) : (
+      <p class="mt-6 text-brand-silver">No published products yet.</p>
+    )}
+  </section>
+</BaseLayout>

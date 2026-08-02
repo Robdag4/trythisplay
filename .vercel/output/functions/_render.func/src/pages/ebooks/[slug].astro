@@ -1,0 +1,27 @@
+---
+// Server-rendered (Phase 3): products come from the DB. /ebooks/[slug]/ still
+// resolves BOTH reserved category pages (/ebooks/offense/) and published product
+// pages (/ebooks/gun-bunch-offense-guide/). Category slugs are reserved; product
+// slugs are validated against them at creation time in the creator portal.
+export const prerender = false;
+
+import CategoryPage from "../../components/ebooks/CategoryPage.astro";
+import ProductPage from "../../components/ebooks/ProductPage.astro";
+import { EBOOK_CATEGORIES } from "../../data/site";
+import { getPublishedProductBySlug } from "../../lib/products";
+
+const { slug } = Astro.params;
+const category = EBOOK_CATEGORIES.find((c) => c.slug === slug) ?? null;
+
+let ebook = null;
+if (!category && slug) {
+  ebook = await getPublishedProductBySlug(slug);
+  if (!ebook) return Astro.redirect("/404/", 404);
+}
+---
+
+{category ? (
+  <CategoryPage {category} />
+) : (
+  ebook && <ProductPage {ebook} />
+)}

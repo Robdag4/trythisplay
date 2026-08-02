@@ -38,19 +38,19 @@ const { data } = ebook;
     </div>
     <div class="flex flex-1 flex-col gap-3 p-5">
       <UpdatedBadge />
-      <h3 class="font-display text-xl uppercase tracking-wide group-hover:text-brand-red transition-colors">
+      <h3 class="font-display text-xl uppercase tracking-wide group-hover:text-brand-red transition-colors" data-card="title">
         {data.title}
       </h3>
-      <p class="text-sm text-brand-silver">by {data.creatorName}</p>
+      <p class="text-sm text-brand-silver">by <span data-card="author">{data.creatorName}</span></p>
       <ul class="mt-auto flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-brand-silver">
-        <li>{capitalize(data.category)}</li>
+        <li data-card="category">{capitalize(data.category)}</li>
         {data.playbook && <li>{data.playbook}</li>}
-        <li>{capitalize(data.difficulty)}</li>
+        <li data-card="difficulty">{capitalize(data.difficulty)}</li>
         <li>{data.lessonCount} lessons</li>
         <li>{data.runtime}</li>
       </ul>
       <div class="flex items-center justify-between border-t border-brand-line pt-4">
-        <span class="font-mono text-lg font-medium">{formatPrice(data.price)}</span>
+        <span class="font-mono text-lg font-medium" data-card="price">{formatPrice(data.price)}</span>
         <span class="text-xs font-semibold uppercase tracking-wider text-brand-red">
           View Ebook →
         </span>

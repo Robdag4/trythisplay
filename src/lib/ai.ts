@@ -6,7 +6,11 @@ import OpenAI from "openai";
 // Provider is abstracted here so it can be swapped later.
 // ============================================================================
 
-const OPENAI_API_KEY = import.meta.env.OPENAI_API_KEY as string | undefined;
+// Read at runtime (Vercel serverless) OR build-time inline. process.env is the
+// reliable source for server-only secrets on Vercel.
+const OPENAI_API_KEY =
+  (import.meta.env.OPENAI_API_KEY as string | undefined) ??
+  (typeof process !== "undefined" ? process.env.OPENAI_API_KEY : undefined);
 export const aiConfigured = Boolean(OPENAI_API_KEY);
 
 let _client: OpenAI | null = null;

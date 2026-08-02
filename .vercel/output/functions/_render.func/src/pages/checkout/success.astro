@@ -1,0 +1,23 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+export const prerender = false;
+---
+
+<BaseLayout
+  title="Purchase Complete | Try This Play"
+  description="Your purchase was successful."
+  noindex={true}
+>
+  <section class="container-site flex min-h-[60vh] items-center justify-center py-12">
+    <div class="card w-full max-w-md p-8 text-center">
+      <p class="eyebrow">Touchdown</p>
+      <h1 class="h-display mt-2 text-3xl">Purchase Complete</h1>
+      <p class="mt-4 text-sm leading-relaxed text-brand-silver">
+        Your ebook is being added to your library right now — this usually
+        takes a few seconds. A receipt is on its way to your email.
+      </p>
+      <a href="/library/" class="btn-primary mt-6 w-full">Go To My Library</a>
+    </div>
+  </section>
+</BaseLayout>

@@ -109,7 +109,7 @@ function toEntry(row: any): ProductEntry {
       seoTitle: row.seo_title ?? undefined,
       seoDescription: row.seo_description ?? undefined,
       creatorId: row.creator_id,
-      creatorName: row.creator?.display_name ?? "Try This Play Creator",
+      creatorName: row.author_name ?? row.creator?.display_name ?? "Try This Play Creator",
       currentMaddenVersion: row.current_madden_version ?? "Madden 27",
       supportedVersions: [row.current_madden_version ?? "Madden 27"],
       category: row.category,

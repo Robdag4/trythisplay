@@ -1,16 +1,26 @@
 ---
-interface Props { product: any; editable: boolean; }
-const { product, editable } = Astro.props;
+interface Props { product: any; editable: boolean; creatorName: string; }
+const { product, editable, creatorName } = Astro.props;
 const dollars = ((product.price_cents ?? 0) / 100).toFixed(2);
 const fieldset = editable ? "" : "pointer-events-none opacity-60";
+const authorValue = product.author_name ?? creatorName ?? "";
 ---
-<form method="POST" class={`grid max-w-2xl gap-5 ${fieldset}`}>
+<form method="POST" enctype="multipart/form-data" class={`grid max-w-2xl gap-5 ${fieldset}`}>
   <input type="hidden" name="_action" value="details" />
 
   <div>
     <label class="block text-sm font-semibold" for="title">Title</label>
     <input id="title" name="title" type="text" required maxlength="120" value={product.title}
+      data-preview="title"
       class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold" for="author_name">Author name</label>
+    <input id="author_name" name="author_name" type="text" maxlength="80" value={authorValue}
+      data-preview="author"
+      class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+    <p class="mt-1 text-xs text-brand-silver">Shown as the ebook's creator. Defaults to your profile name.</p>
   </div>
 
   <div>
@@ -19,6 +29,25 @@ const fieldset = editable ? "" : "pointer-events-none opacity-60";
       <span class="font-mono text-xs text-brand-silver">/ebooks/{product.slug}/</span>
     </div>
     <p class="mt-1 text-xs text-brand-silver">Generated from your title.{product.published_at ? " Locked after publishing." : " Updates when you rename before publishing."}</p>
+  </div>
+
+  <!-- Cover (moved here from the old Cover tab). -->
+  <div>
+    <span class="block text-sm font-semibold">Cover image</span>
+    <div class="mt-2 flex items-start gap-4">
+      <div class="aspect-[4/5] w-28 shrink-0 overflow-hidden border border-brand-line bg-brand-charcoal">
+        {product.cover_image_url ? (
+          <img src={product.cover_image_url} alt={product.cover_image_alt ?? "Cover"} class="h-full w-full object-cover" />
+        ) : (
+          <div class="flex h-full w-full items-center justify-center p-2 text-center text-[10px] text-brand-silver">No cover</div>
+        )}
+      </div>
+      <div class="flex-1">
+        <input id="cover" name="cover" type="file" accept="image/jpeg,image/png,image/webp"
+          class="w-full text-sm text-brand-silver file:mr-3 file:border file:border-brand-line file:bg-brand-panel file:px-3 file:py-2 file:text-sm" />
+        <p class="mt-1 text-xs text-brand-silver">4:5 portrait, JPG/PNG/WebP, under 3&nbsp;MB. Alt text is generated from your title.</p>
+      </div>
+    </div>
   </div>
 
   <div>
@@ -37,15 +66,15 @@ const fieldset = editable ? "" : "pointer-events-none opacity-60";
   <div class="grid gap-4 sm:grid-cols-2">
     <div>
       <label class="block text-sm font-semibold" for="category">Category</label>
-      <select id="category" name="category" class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm">
-        {["offense", "defense", "franchise"].map((c) => (
+      <select id="category" name="category" data-preview="category" class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm">
+        {["offense", "defense"].map((c) => (
           <option value={c} selected={product.category === c}>{c}</option>
         ))}
       </select>
     </div>
     <div>
       <label class="block text-sm font-semibold" for="difficulty">Difficulty</label>
-      <select id="difficulty" name="difficulty" class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm">
+      <select id="difficulty" name="difficulty" data-preview="difficulty" class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm">
         {["beginner", "intermediate", "advanced"].map((d) => (
           <option value={d} selected={product.difficulty === d}>{d}</option>
         ))}
@@ -81,6 +110,7 @@ const fieldset = editable ? "" : "pointer-events-none opacity-60";
   <div>
     <label class="block text-sm font-semibold" for="price">Price (USD)</label>
     <input id="price" name="price" type="number" min="1" max="500" step="1" value={dollars}
+      data-preview="price"
       class="mt-2 w-40 border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
     <p class="mt-1 text-xs text-brand-silver">$1–$500.</p>
   </div>
