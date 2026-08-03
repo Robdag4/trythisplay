@@ -1,7 +1,13 @@
 ---
+// Server-rendered: the structured creator application posts to itself, saves
+// to creator_applications, and notifies the site inbox.
+export const prerender = false;
+
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../../components/ui/Breadcrumbs.astro";
 import SectionHeading from "../../../components/ui/SectionHeading.astro";
+import { supabaseAdmin } from "../../../lib/supabase";
+import { sendApplicationNotification } from "../../../lib/email";
 
 const howItWorks = [
   { title: "Apply", body: "Tell us about your Madden experience, achievements, content, and the product you want to build." },
@@ -16,6 +22,75 @@ const expectations = [
   "Setups are kept current: creators update products when patches change the meta.",
   "Every AI-drafted written setup is reviewed and approved by you before it reaches customers.",
 ];
+
+const lines = (v: string) => v.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 12);
+
+let sent = false;
+let error: string | null = null;
+const values: Record<string, string> = {};
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  if (String(form.get("website") ?? "") !== "") {
+    sent = true; // honeypot
+  } else {
+    const name = String(form.get("name") ?? "").trim().slice(0, 120);
+    const email = String(form.get("email") ?? "").trim().slice(0, 200);
+    const gamertag = String(form.get("gamertag") ?? "").trim().slice(0, 80);
+    const discord = String(form.get("discord") ?? "").trim().slice(0, 80);
+    const socials = lines(String(form.get("socials") ?? "").slice(0, 2000));
+    const experience = String(form.get("experience") ?? "").trim().slice(0, 4000);
+    const contentLinks = lines(String(form.get("content_links") ?? "").slice(0, 2000));
+    const categoryRaw = String(form.get("category") ?? "offense");
+    const category = ["offense", "defense", "franchise"].includes(categoryRaw) ? categoryRaw : "offense";
+    const audience = String(form.get("audience") ?? "").trim().slice(0, 120);
+    const concept = String(form.get("concept") ?? "").trim().slice(0, 4000);
+
+    if (!name || !email || !gamertag || !experience || !concept) {
+      error = "Please fill in your name, email, gamertag, experience, and product concept.";
+      Object.assign(values, {
+        name, email, gamertag, discord, category, audience, experience, concept,
+        socials: socials.join("\n"), content_links: contentLinks.join("\n"),
+      });
+    } else {
+      const admin = supabaseAdmin();
+      const { error: dbErr } = await admin.from("creator_applications").insert({
+        name,
+        email,
+        gamertag,
+        discord: discord || null,
+        socials,
+        experience,
+        content_links: contentLinks,
+        category,
+        audience_size: audience || null,
+        product_concept: concept,
+      });
+      if (dbErr) {
+        console.error("application insert:", dbErr.message);
+        error = "Something went wrong submitting your application. Please try again, or use the contact form.";
+        Object.assign(values, {
+          name, email, gamertag, discord, category, audience, experience, concept,
+          socials: socials.join("\n"), content_links: contentLinks.join("\n"),
+        });
+      } else {
+        sent = true;
+        await sendApplicationNotification({
+          name, email, gamertag,
+          discord: discord || undefined,
+          category,
+          audienceSize: audience || undefined,
+          experience,
+          productConcept: concept,
+          socials,
+          contentLinks,
+        }).catch(() => {});
+      }
+    }
+  }
+}
+
+const inputClass = "mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red";
 ---
 
 <BaseLayout
@@ -61,18 +136,86 @@ const expectations = [
 
     <div class="card mt-16 max-w-3xl p-8">
       <h2 class="h-display text-2xl">Apply now</h2>
-      <p class="mt-3 text-sm leading-relaxed text-brand-silver">
-        Send your application through the contact form with the Creator
-        Application inquiry type. Include your gamertag, social profiles,
-        Discord username, Madden experience, competitive achievements, links to
-        content examples, your preferred product category, estimated audience
-        size, and a short product idea.
-      </p>
-      <p class="mt-3 text-sm leading-relaxed text-brand-silver">
-        A dedicated application form with structured fields ships with the
-        creator portal in the next release.
-      </p>
-      <a href="/contact/?inquiry=creator" class="btn-primary mt-6">Start Your Application</a>
+
+      {sent ? (
+        <div class="mt-5 border border-emerald-600/40 bg-emerald-950/15 p-6">
+          <h3 class="h-display text-xl text-emerald-300">Application received</h3>
+          <p class="mt-2 text-sm leading-relaxed text-brand-silver">
+            Thanks — our team reviews every application. If it's a fit, you'll
+            get a private creator invitation by email. We typically respond
+            within a few business days.
+          </p>
+        </div>
+      ) : (
+        <form method="POST" class="mt-6 grid gap-5">
+          {error && <p class="border border-brand-red/50 bg-brand-red/10 p-3 text-sm">{error}</p>}
+          <div class="hidden" aria-hidden="true">
+            <label for="website">Website</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="name" class="block text-sm font-semibold">Name</label>
+              <input id="name" name="name" type="text" required autocomplete="name" value={values.name ?? ""} class={inputClass} />
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-semibold">Email</label>
+              <input id="email" name="email" type="email" required autocomplete="email" value={values.email ?? ""} class={inputClass} />
+            </div>
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="gamertag" class="block text-sm font-semibold">Gamertag</label>
+              <input id="gamertag" name="gamertag" type="text" required value={values.gamertag ?? ""} class={inputClass} />
+            </div>
+            <div>
+              <label for="discord" class="block text-sm font-semibold">Discord username</label>
+              <input id="discord" name="discord" type="text" value={values.discord ?? ""} class={inputClass} />
+            </div>
+          </div>
+
+          <div>
+            <label for="socials" class="block text-sm font-semibold">Social profiles <span class="font-normal text-brand-silver">(one link per line)</span></label>
+            <textarea id="socials" name="socials" rows="3" placeholder="https://youtube.com/@you&#10;https://x.com/you" class={inputClass}>{values.socials ?? ""}</textarea>
+          </div>
+
+          <div>
+            <label for="experience" class="block text-sm font-semibold">Madden experience & competitive achievements</label>
+            <textarea id="experience" name="experience" rows="4" required
+              placeholder="Years playing, ranks, tournament results, notable wins…" class={inputClass}>{values.experience ?? ""}</textarea>
+          </div>
+
+          <div>
+            <label for="content_links" class="block text-sm font-semibold">Content examples <span class="font-normal text-brand-silver">(one link per line)</span></label>
+            <textarea id="content_links" name="content_links" rows="3" placeholder="Links to videos, guides, or streams" class={inputClass}>{values.content_links ?? ""}</textarea>
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="category" class="block text-sm font-semibold">Preferred product category</label>
+              <select id="category" name="category" class={inputClass}>
+                {["offense", "defense", "franchise"].map((c) => (
+                  <option value={c} selected={(values.category ?? "offense") === c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label for="audience" class="block text-sm font-semibold">Estimated audience size <span class="font-normal text-brand-silver">(optional)</span></label>
+              <input id="audience" name="audience" type="text" placeholder="e.g. 12k YouTube, 3k Discord" value={values.audience ?? ""} class={inputClass} />
+            </div>
+          </div>
+
+          <div>
+            <label for="concept" class="block text-sm font-semibold">Product concept</label>
+            <textarea id="concept" name="concept" rows="4" required
+              placeholder="The ebook you want to build: formation(s), concepts, who it's for…" class={inputClass}>{values.concept ?? ""}</textarea>
+          </div>
+
+          <button type="submit" class="btn-primary w-fit">Submit Application</button>
+        </form>
+      )}
     </div>
   </section>
 </BaseLayout>

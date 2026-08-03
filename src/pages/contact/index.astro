@@ -1,10 +1,16 @@
 ---
+// Server-rendered so the form can POST to itself: saved to contact_messages
+// and emailed to the site inbox. Honeypot field filters basic spam bots.
+export const prerender = false;
+
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../components/ui/Breadcrumbs.astro";
 import SectionHeading from "../../components/ui/SectionHeading.astro";
 import FaqList from "../../components/ui/FaqList.astro";
 import { SITE } from "../../data/site";
+import { supabaseAdmin } from "../../lib/supabase";
+import { sendContactNotification } from "../../lib/email";
 
 const inquiryTypes = [
   "General Support",
@@ -15,6 +21,60 @@ const inquiryTypes = [
   "Technical Support",
   "Refund or Billing Question",
 ];
+
+// /contact/?inquiry=creator preselects the creator-application inquiry type.
+const preselect =
+  Astro.url.searchParams.get("inquiry") === "creator" ? "Creator Application" : null;
+
+let sent = false;
+let error: string | null = null;
+const values: Record<string, string> = {};
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  // Honeypot: real users never fill this hidden field.
+  if (String(form.get("website") ?? "") !== "") {
+    sent = true;
+  } else {
+    const name = String(form.get("name") ?? "").trim().slice(0, 120);
+    const email = String(form.get("email") ?? "").trim().slice(0, 200);
+    const gamertag = String(form.get("gamertag") ?? "").trim().slice(0, 80);
+    const inquiryRaw = String(form.get("inquiry") ?? "");
+    const inquiry = inquiryTypes.includes(inquiryRaw) ? inquiryRaw : "General Support";
+    const order = String(form.get("order") ?? "").trim().slice(0, 120);
+    const message = String(form.get("message") ?? "").trim().slice(0, 5000);
+
+    if (!name || !email || !message) {
+      error = "Please fill in your name, email, and message.";
+      Object.assign(values, { name, email, gamertag, inquiry, order, message });
+    } else {
+      const admin = supabaseAdmin();
+      const { error: dbErr } = await admin.from("contact_messages").insert({
+        name,
+        email,
+        gamertag: gamertag || null,
+        inquiry_type: inquiry,
+        order_number: order || null,
+        message,
+      });
+      if (dbErr) {
+        console.error("contact insert:", dbErr.message);
+        error = "Something went wrong sending your message. Please try again, or email us directly.";
+        Object.assign(values, { name, email, gamertag, inquiry, order, message });
+      } else {
+        sent = true;
+        await sendContactNotification({
+          name,
+          email,
+          gamertag: gamertag || undefined,
+          inquiryType: inquiry,
+          orderNumber: order || undefined,
+          message,
+        }).catch(() => {});
+      }
+    }
+  }
+}
 
 const allFaqs = await getCollection("faqs");
 const faqs = allFaqs
@@ -36,55 +96,66 @@ const faqs = allFaqs
         intro="Send us a message and we'll get back to you, typically within one to two business days."
       />
 
-      <!-- Phase 2 wires this form to a server endpoint with validation, spam
-           protection, rate limiting, and admin email notification. Until then
-           it submits via mailto as a functional fallback. -->
-      <form
-        class="mt-10 grid max-w-xl gap-5"
-        method="get"
-        action={`mailto:${SITE.supportEmail}`}
-        enctype="text/plain"
-      >
-        <div class="grid gap-5 sm:grid-cols-2">
+      {sent ? (
+        <div class="mt-10 max-w-xl border border-emerald-600/40 bg-emerald-950/15 p-6">
+          <h2 class="h-display text-xl text-emerald-300">Message sent</h2>
+          <p class="mt-2 text-sm leading-relaxed text-brand-silver">
+            Thanks — we've received your message and will reply to your email,
+            typically within one to two business days.
+          </p>
+          <a href="/" class="btn-secondary mt-5 inline-block text-sm">Back to home</a>
+        </div>
+      ) : (
+        <form method="POST" class="mt-10 grid max-w-xl gap-5">
+          {error && <p class="border border-brand-red/50 bg-brand-red/10 p-3 text-sm">{error}</p>}
+          <!-- Honeypot (hidden from real users) -->
+          <div class="hidden" aria-hidden="true">
+            <label for="website">Website</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="name" class="block text-sm font-semibold">Name</label>
+              <input id="name" name="name" type="text" required autocomplete="name" value={values.name ?? ""}
+                class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-semibold">Email</label>
+              <input id="email" name="email" type="email" required autocomplete="email" value={values.email ?? ""}
+                class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+            </div>
+          </div>
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="gamertag" class="block text-sm font-semibold">Gamertag</label>
+              <input id="gamertag" name="gamertag" type="text" value={values.gamertag ?? ""}
+                class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+            </div>
+            <div>
+              <label for="inquiry" class="block text-sm font-semibold">Inquiry type</label>
+              <select id="inquiry" name="inquiry" required
+                class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">
+                {inquiryTypes.map((t) => (
+                  <option value={t} selected={(values.inquiry ?? preselect) === t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div>
-            <label for="name" class="block text-sm font-semibold">Name</label>
-            <input id="name" name="name" type="text" required autocomplete="name"
+            <label for="order" class="block text-sm font-semibold">
+              Order number <span class="font-normal text-brand-silver">(if applicable)</span>
+            </label>
+            <input id="order" name="order" type="text" value={values.order ?? ""}
               class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
           </div>
           <div>
-            <label for="email" class="block text-sm font-semibold">Email</label>
-            <input id="email" name="email" type="email" required autocomplete="email"
-              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+            <label for="message" class="block text-sm font-semibold">Message</label>
+            <textarea id="message" name="message" rows="6" required
+              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">{values.message ?? ""}</textarea>
           </div>
-        </div>
-        <div class="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label for="gamertag" class="block text-sm font-semibold">Gamertag</label>
-            <input id="gamertag" name="gamertag" type="text"
-              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
-          </div>
-          <div>
-            <label for="inquiry" class="block text-sm font-semibold">Inquiry type</label>
-            <select id="inquiry" name="inquiry" required
-              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">
-              {inquiryTypes.map((t) => <option value={t}>{t}</option>)}
-            </select>
-          </div>
-        </div>
-        <div>
-          <label for="order" class="block text-sm font-semibold">
-            Order number <span class="font-normal text-brand-silver">(if applicable)</span>
-          </label>
-          <input id="order" name="order" type="text"
-            class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
-        </div>
-        <div>
-          <label for="message" class="block text-sm font-semibold">Message</label>
-          <textarea id="message" name="message" rows="6" required
-            class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red"></textarea>
-        </div>
-        <button type="submit" class="btn-primary w-fit">Send Message</button>
-      </form>
+          <button type="submit" class="btn-primary w-fit">Send Message</button>
+        </form>
+      )}
     </div>
 
     <aside class="space-y-6">
