@@ -13,6 +13,7 @@ author: "Try This Play Team"
 publishedAt: 2026-08-03
 updatedAt: 2026-08-03
 currentMaddenVersion: "Madden 27"
+draft: true
 category: "offense"
 difficulty: "beginner"
 faqItems:
