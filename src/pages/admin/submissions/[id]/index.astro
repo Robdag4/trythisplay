@@ -58,14 +58,32 @@ if (Astro.request.method === "POST") {
 }
 
 const { data: lessons } = await admin.from("lessons").select("*").eq("product_id", product.id).order("sort_order");
-// Sign playback tokens for review.
+// Sign playback + thumbnail tokens for review.
 const tokens: Record<string, string | null> = {};
+const thumbTokens: Record<string, string | null> = {};
 for (const l of lessons ?? []) {
   if (l.mux_playback_id && muxSigningConfigured) {
     tokens[l.id] = await signPlayback(l.mux_playback_id, "video", 3600);
+    thumbTokens[l.id] = await signPlayback(l.mux_playback_id, "thumbnail", 3600);
   }
 }
 const decided = !!submission.decided_at;
+
+// Written-setup display helpers (coverage-keyed pre-snap; legacy tolerated).
+const COVERAGES = [
+  ["any", "Any Coverage"],
+  ["cover0", "Cover 0"],
+  ["cover1", "Cover 1"],
+  ["cover2", "Cover 2"],
+  ["cover2man", "2 Man Under"],
+  ["cover3", "Cover 3"],
+  ["cover4", "Cover 4"],
+] as const;
+const normPreSnap = (v: any): Record<string, string[]> => {
+  if (Array.isArray(v)) return v.length ? { any: v } : {};
+  if (v && typeof v === "object") return v;
+  return {};
+};
 ---
 
 <BaseLayout title={`Review: ${product.title} | Admin`} description="Review submission." noindex={true}>
@@ -92,6 +110,19 @@ const decided = !!submission.decided_at;
     <div class="mt-4 grid gap-6">
       {(lessons ?? []).map((l, i) => {
         const ws = (l.written_setup ?? {}) as any;
+        let plays: any[] = Array.isArray(l.plays) && l.plays.length ? l.plays : (Array.isArray(ws.plays) ? ws.plays : []);
+        if (!plays.length && ws.play) {
+          plays = [{ play: ws.play, audibles: ws.audibles ?? [], pre_snap: ws.pre_snap ?? [], reads: ws.reads ?? [], notes: ws.notes ?? "" }];
+        }
+        plays = plays.map((p: any) => ({ ...p, pre_snap: normPreSnap(p?.pre_snap) }));
+        const formation = (l.formation ?? ws.formation ?? "").trim();
+        const audibles = [
+          ...new Set<string>([
+            ...(Array.isArray(ws.audibles) ? ws.audibles : []),
+            ...plays.flatMap((p: any) => (Array.isArray(p.audibles) ? p.audibles : [])),
+          ]),
+        ];
+        const hasSetup = Boolean(formation || audibles.length || plays.length);
         return (
           <div class="card p-5">
             <div class="flex items-center justify-between">
@@ -99,23 +130,37 @@ const decided = !!submission.decided_at;
               <div class="flex gap-2 text-[10px] uppercase">
                 <span class={l.status === "ready" ? "text-emerald-400" : "text-yellow-400"}>{l.status}</span>
                 {l.free_preview && <span class="text-emerald-400">free</span>}
-                {l.written_setup_approved_at ? <span class="text-sky-400">setup ✓</span> : <span class="text-red-400">no setup</span>}
+                {l.written_setup_approved_at ? <span class="text-sky-400">setup ✓</span> : <span class="text-red-400">setup not approved</span>}
               </div>
             </div>
 
             {l.mux_playback_id && tokens[l.id] ? (
               <mux-player class="mt-3 block aspect-video w-full overflow-hidden rounded"
-                playback-id={l.mux_playback_id} playback-token={tokens[l.id]} stream-type="on-demand"></mux-player>
+                playback-id={l.mux_playback_id}
+                playback-token={tokens[l.id]}
+                thumbnail-token={thumbTokens[l.id] || undefined}
+                stream-type="on-demand"></mux-player>
             ) : (
               <p class="mt-3 text-xs text-brand-silver">No playable video (status: {l.status}).</p>
             )}
 
-            {ws.play && (
-              <div class="mt-3 grid gap-1 text-xs text-brand-silver">
-                <div><b class="text-brand-white">Formation:</b> {ws.formation} · <b class="text-brand-white">Play:</b> {ws.play}</div>
-                {ws.reads?.length ? <div><b class="text-brand-white">Reads:</b> {ws.reads.join(" → ")}</div> : null}
-                {ws.counters?.length ? <div><b class="text-brand-white">Counters:</b> {ws.counters.join(", ")}</div> : null}
+            {hasSetup ? (
+              <div class="mt-3 grid gap-2 text-xs text-brand-silver">
+                {formation && <div><b class="text-brand-white">Formation:</b> {formation}</div>}
+                {audibles.length > 0 && <div><b class="text-brand-white">Formation audibles:</b> {audibles.join(", ")}</div>}
+                {plays.map((p: any, j: number) => (
+                  <div class="border border-brand-line p-3">
+                    <div class="font-bold uppercase tracking-wider text-brand-red">Play {j + 1}{p.play ? ` — ${p.play}` : ""}</div>
+                    {COVERAGES.filter(([ck]) => (p.pre_snap[ck] ?? []).length > 0).map(([ck, clabel]) => (
+                      <div class="mt-1"><b class="text-brand-white">{clabel}:</b> {p.pre_snap[ck].join(" · ")}</div>
+                    ))}
+                    {(p.reads ?? []).length > 0 && <div class="mt-1"><b class="text-brand-white">Reads:</b> {p.reads.join(" → ")}</div>}
+                    {String(p.notes ?? "").trim() && <div class="mt-1"><b class="text-brand-white">Notes:</b> {p.notes}</div>}
+                  </div>
+                ))}
               </div>
+            ) : (
+              <p class="mt-3 text-xs text-red-400">No written setup yet.</p>
             )}
             {l.transcript && (
               <details class="mt-3"><summary class="cursor-pointer text-xs text-brand-silver">Transcript</summary>
