@@ -13,24 +13,47 @@ const { data } = ebook;
 
 <article class="card group flex flex-col">
   <a href={`/ebooks/${ebook.slug}/`} class="flex flex-1 flex-col">
-    <div class="relative aspect-[4/5] overflow-hidden border-b border-brand-line bg-brand-charcoal">
-      <div data-card="cover-slot" class="absolute inset-0">
-        {data.coverImage ? (
-          <img
-            src={data.coverImage}
-            alt={data.coverImageAlt ?? `${data.title} ebook cover`}
-            width="640"
-            height="800"
-            loading="lazy"
-            class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div class="flex h-full w-full items-center justify-center p-6 bg-stadium-glow">
-            <span class="font-display text-center text-2xl uppercase leading-tight text-brand-white/80">
-              {data.title}
-            </span>
+    <!-- 3D book mockup (matches the product-page display, scaled for cards).
+         Tilts toward the viewer on hover. -->
+    <div class="relative aspect-[4/5] overflow-hidden border-b border-brand-line bg-brand-charcoal bg-stadium-glow">
+      <div class="absolute inset-0 flex items-center justify-center" style="perspective: 900px;">
+        <div class="relative aspect-[4/5] w-[70%] max-h-[86%] transition-transform duration-300 [transform-style:preserve-3d] [transform:rotateY(-18deg)] group-hover:[transform:rotateY(-8deg)]">
+          <!-- Page block along the right edge -->
+          <div
+            aria-hidden="true"
+            style="position: absolute; top: 2%; bottom: 2%; right: -9px; width: 9px; border-radius: 0 2px 2px 0; transform: rotateY(38deg); transform-origin: left center; background: linear-gradient(to right, #efece4 0%, #cfccc2 15%, #f6f4ee 32%, #cfccc2 48%, #f6f4ee 66%, #cfccc2 82%, #b9b6ac 100%);"
+          ></div>
+          <!-- Front cover -->
+          <div
+            class="absolute inset-0 overflow-hidden border border-brand-line bg-brand-charcoal"
+            style="border-radius: 2px 5px 5px 2px; box-shadow: -14px 18px 36px -14px rgba(0,0,0,0.8);"
+          >
+            <div data-card="cover-slot" class="absolute inset-0">
+              {data.coverImage ? (
+                <img
+                  src={data.coverImage}
+                  alt={data.coverImageAlt ?? `${data.title} ebook cover`}
+                  width="640"
+                  height="800"
+                  loading="lazy"
+                  class="h-full w-full object-cover"
+                />
+              ) : (
+                <div class="flex h-full w-full items-center justify-center bg-stadium-glow p-4">
+                  <span class="font-display text-center text-lg uppercase leading-tight text-brand-white/80">
+                    {data.title}
+                  </span>
+                </div>
+              )}
+            </div>
+            <!-- Spine sheen -->
+            <div
+              aria-hidden="true"
+              class="pointer-events-none absolute inset-0"
+              style="background: linear-gradient(90deg, rgba(255,255,255,0.16) 0%, rgba(0,0,0,0.30) 3%, rgba(255,255,255,0.10) 6.5%, rgba(255,255,255,0) 12%);"
+            ></div>
           </div>
-        )}
+        </div>
       </div>
       {data.placeholder && (
         <span class="absolute left-2 top-2 bg-brand-black/80 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-brand-silver">
