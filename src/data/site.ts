@@ -17,7 +17,6 @@ export const SITE = {
 export const NAV_PRIMARY = [
   { label: "Home", href: "/" },
   { label: "Ebooks", href: "/ebooks/" },
-  { label: "Guides", href: "/guides/" },
   { label: "Franchise", href: "/franchise/" },
   { label: "Meet The Team", href: "/team/" },
   { label: "Contact Us", href: "/contact/" },
