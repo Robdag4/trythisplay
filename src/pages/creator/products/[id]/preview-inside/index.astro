@@ -1,0 +1,130 @@
+---
+export const prerender = false;
+
+import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+import LessonViewer from "../../../../../components/library/LessonViewer.astro";
+import { requireCreator } from "../../../../../lib/creator";
+import { getProductByIdAdmin } from "../../../../../lib/products";
+import { signPlayback } from "../../../../../lib/mux";
+
+const { id } = Astro.params;
+const path = `/creator/products/${id}/`;
+const guard = await requireCreator(Astro.request, Astro.cookies, path);
+if (!guard.ok) {
+  if (guard.redirect?.startsWith("/login")) return Astro.redirect(guard.redirect);
+  return Astro.redirect("/creator/");
+}
+
+const ebook = await getProductByIdAdmin(id!);
+if (!ebook || ebook.data.creatorId !== guard.creator.id) return Astro.redirect("/creator/");
+
+const requested = Number(Astro.url.searchParams.get("lesson") ?? 0);
+const current = Math.min(Math.max(requested, 0), Math.max(ebook.data.lessons.length - 1, 0));
+const lesson = ebook.data.lessons[current];
+
+// Creator previews their own (signed-policy) video.
+const playbackToken = lesson?.playbackId ? await signPlayback(lesson.playbackId, "video", 3600) : null;
+
+// Embedded mode (?embed=1): rendered inside the lesson-editor iframe. Hides
+// the draft banner and listens for live field updates posted from the editor.
+const embed = Astro.url.searchParams.get("embed") === "1";
+const linkPrefix = `/creator/products/${id}/preview-inside/?${embed ? "embed=1&" : ""}lesson=`;
+---
+
+<BaseLayout title={`${ebook.data.title} | Inside Preview`} description="Draft customer view." noindex={true}>
+  {!embed && (
+    <div class="fixed left-0 right-0 top-0 z-50 bg-brand-red px-4 py-2 text-center text-xs font-bold uppercase tracking-widest text-white">
+      Draft preview — customer library view · <a href={path} class="underline">back to editor</a>
+    </div>
+  )}
+  <div class={embed ? "" : "pt-9"}>
+    <LessonViewer
+      {ebook}
+      {current}
+      {playbackToken}
+      mode="preview"
+      {linkPrefix}
+    />
+  </div>
+
+  <script is:inline src="https://cdn.jsdelivr.net/npm/@mux/mux-player@2"></script>
+
+  {embed && (
+    <script is:inline>
+      // Live mirror: apply lesson-editor field updates. Same-origin only.
+      (function () {
+        const esc = (s) => {
+          const d = document.createElement("div");
+          d.textContent = s ?? "";
+          return d.innerHTML;
+        };
+
+        function renderSetup(v) {
+          const wrap = document.querySelector('[data-inside="setup-wrap"]');
+          const box = document.querySelector('[data-inside="setup"]');
+          if (!wrap || !box) return;
+          const formation = String(v.formation ?? "").trim();
+          const plays = (Array.isArray(v.plays) ? v.plays : []).filter((p) =>
+            p && (
+              String(p.play ?? "").trim() ||
+              ["audibles", "pre_snap", "reads"].some((k) => Array.isArray(p[k]) && p[k].length) ||
+              String(p.notes ?? "").trim()
+            )
+          );
+          const has = formation || plays.length;
+          wrap.classList.toggle("hidden", !has);
+
+          const list = (label, items, ordered) => {
+            if (!items || !items.length) return "";
+            let h = '<div class="mt-3"><p class="text-xs font-semibold uppercase tracking-wider text-brand-silver">' + label + '</p><ul class="mt-1 space-y-1">';
+            items.forEach((it, j) => {
+              h += '<li class="text-sm text-brand-silver">' + (ordered ? '<span class="font-mono text-xs text-brand-red">' + (j + 1) + ". </span>" : "") + esc(it) + "</li>";
+            });
+            return h + "</ul></div>";
+          };
+
+          let html = "";
+          if (formation) {
+            html += '<p class="font-mono text-sm"><span class="text-xs uppercase tracking-wider text-brand-silver">Formation: </span>' + esc(formation) + "</p>";
+          }
+          plays.forEach((p, i) => {
+            html += '<div class="mt-4 border border-brand-line p-4">';
+            html += '<p class="text-xs font-bold uppercase tracking-wider text-brand-red">Play ' + (i + 1) + (String(p.play ?? "").trim() ? " — " + esc(p.play) : "") + "</p>";
+            html += list("Audibles", p.audibles);
+            html += list("Pre-snap adjustments", p.pre_snap);
+            html += list("Reads (in order)", p.reads, true);
+            if (String(p.notes ?? "").trim()) {
+              html += '<div class="mt-3"><p class="text-xs font-semibold uppercase tracking-wider text-brand-silver">Notes</p><p class="mt-1 text-sm text-brand-silver">' + esc(p.notes) + "</p></div>";
+            }
+            html += "</div>";
+          });
+          box.innerHTML = html;
+        }
+
+        window.addEventListener("message", (event) => {
+          if (event.origin !== window.location.origin) return;
+          const msg = event.data;
+          if (!msg || msg.type !== "ttp-preview") return;
+          switch (msg.field) {
+            case "lesson-meta": {
+              const v = msg.value || {};
+              if ("title" in v)
+                document.querySelectorAll('[data-inside="title"]').forEach((el) => {
+                  el.textContent = v.title || "Lesson title";
+                });
+              if ("description" in v)
+                document.querySelectorAll('[data-inside="description"]').forEach((el) => {
+                  el.textContent = v.description;
+                  el.classList.toggle("hidden", !String(v.description ?? "").trim());
+                });
+              break;
+            }
+            case "setup":
+              renderSetup(msg.value || {});
+              break;
+          }
+        });
+      })();
+    </script>
+  )}
+</BaseLayout>

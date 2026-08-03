@@ -222,9 +222,13 @@ const statusChip: Record<string, string> = {
           {tab === "preview" && (
             <div class="rounded border border-brand-line bg-brand-panel p-6">
               <p class="text-sm text-brand-silver">
-                A watermarked draft preview of your public product page opens in a new tab.
+                Watermarked draft previews open in a new tab: the public sales
+                page, and the inside customer view your buyers get after purchase.
               </p>
-              <a href={`/creator/products/${product.id}/preview/`} target="_blank" class="btn-primary mt-4 inline-block">Open Draft Preview</a>
+              <div class="mt-4 flex flex-wrap gap-3">
+                <a href={`/creator/products/${product.id}/preview/`} target="_blank" class="btn-primary inline-block">Product Page Preview</a>
+                <a href={`/creator/products/${product.id}/preview-inside/`} target="_blank" class="btn-secondary inline-block">Inside The Ebook (Customer View)</a>
+              </div>
             </div>
           )}
           {tab === "submit" && <SubmitTab {product} lessons={lessons ?? []} {submission} />}

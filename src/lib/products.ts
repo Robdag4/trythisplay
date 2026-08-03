@@ -51,6 +51,8 @@ export interface ProductData {
     description?: string;
     freePreview: boolean;
     playbackId?: string;
+    formation?: string;
+    plays?: any[];
   }[];
   whatYouWillLearn: string[];
   whoThisIsFor: string[];
@@ -93,6 +95,8 @@ function toEntry(row: any): ProductEntry {
       description: l.description ?? undefined,
       freePreview: !!l.free_preview,
       playbackId: l.mux_playback_id ?? undefined,
+      formation: l.formation ?? undefined,
+      plays: Array.isArray(l.plays) ? l.plays : [],
     }));
 
   const totalSeconds = (row.lessons ?? []).reduce(
