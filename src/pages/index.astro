@@ -3,7 +3,7 @@
 // (Phase 3). The rest of the page is static marketing content.
 export const prerender = false;
 
-import { getFeaturedProducts } from "../lib/products";
+import { getPublishedProducts } from "../lib/products";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import EbookCard from "../components/ebooks/EbookCard.astro";
 import FranchiseCard from "../components/franchise/FranchiseCard.astro";
@@ -11,7 +11,8 @@ import SectionHeading from "../components/ui/SectionHeading.astro";
 import RouteLines from "../components/ui/RouteLines.astro";
 import { SITE } from "../data/site";
 
-const featured = (await getFeaturedProducts()).slice(0, 4);
+// Every published ebook is featured on the homepage (newest first, max 4).
+const featured = (await getPublishedProducts()).slice(0, 4);
 
 const steps = [
   {
