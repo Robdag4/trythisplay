@@ -320,18 +320,27 @@ const statusColor: Record<string, string> = {
 
   <script is:inline define:vars={{ lessonId }}>
     // Wire the Mux uploader: fetch a signed upload URL from our API, then start.
+    // IMPORTANT: the endpoint function must be assigned as a JS PROPERTY.
+    // setAttribute() stringifies the function, making the uploader PUT the
+    // video to a garbage URL (the "Server responded with 404" bug).
     const uploader = document.getElementById("uploader");
     if (uploader) {
-      uploader.setAttribute("endpoint", async () => {
+      uploader.endpoint = async () => {
         const res = await fetch("/api/creator/uploads", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ lesson_id: lessonId }),
         });
-        if (!res.ok) throw new Error("Could not start upload");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error === "video-unavailable"
+            ? "Video service not configured"
+            : "Could not start upload (" + res.status + ")");
+        }
         const { url } = await res.json();
+        if (!url) throw new Error("No upload URL returned");
         return url;
-      });
+      };
       uploader.addEventListener("success", () => {
         setTimeout(() => location.reload(), 1500);
       });
