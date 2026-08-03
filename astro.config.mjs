@@ -5,7 +5,7 @@ import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://trythisplay.com",
+  site: "https://www.trythisplay.com",
   trailingSlash: "always",
   // Astro 5's default security.checkOrigin rejected legitimate SAME-ORIGIN form
   // POSTs behind Vercel's proxy ("Cross-site POST form submissions are
