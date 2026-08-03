@@ -4,7 +4,7 @@ export const prerender = false;
 import BaseLayout from "../../../../../../layouts/BaseLayout.astro";
 import { requireCreator } from "../../../../../../lib/creator";
 import { supabaseAdmin } from "../../../../../../lib/supabase";
-import { muxConfigured, signPlayback, muxSigningConfigured } from "../../../../../../lib/mux";
+import { muxConfigured, muxClient, getAssetInfo, signPlayback, muxSigningConfigured } from "../../../../../../lib/mux";
 import { aiConfigured } from "../../../../../../lib/ai";
 
 const { id, lessonId } = Astro.params;
@@ -98,6 +98,40 @@ if (Astro.request.method === "POST" && editable) {
   }
   const r = await admin.from("lessons").select("*").eq("id", lessonId).maybeSingle();
   lesson = r.data ?? lesson;
+}
+
+// ── Reconcile with Mux directly ─────────────────────────────────────────────
+// The webhook normally advances uploading → processing → ready. If it isn't
+// configured (or an event was missed), ask Mux for the real status whenever
+// the lesson looks stuck, so a page refresh always self-heals.
+if (["uploading", "processing"].includes(lesson.status) && muxConfigured) {
+  try {
+    const mux = muxClient();
+    if (mux && lesson.mux_upload_id && !lesson.mux_asset_id) {
+      const up = await mux.video.uploads.retrieve(lesson.mux_upload_id);
+      if (up.asset_id) {
+        await admin.from("lessons").update({ mux_asset_id: up.asset_id, status: "processing" }).eq("id", lessonId);
+        lesson = { ...lesson, mux_asset_id: up.asset_id, status: "processing" };
+      }
+    }
+    if (lesson.mux_asset_id && lesson.status !== "ready") {
+      const info = await getAssetInfo(lesson.mux_asset_id);
+      if (info?.status === "ready") {
+        const patch = {
+          mux_playback_id: info.playbackId,
+          runtime_seconds: info.duration ? Math.round(info.duration) : null,
+          status: "ready",
+        };
+        await admin.from("lessons").update(patch).eq("id", lessonId);
+        lesson = { ...lesson, ...patch };
+      } else if (info?.status === "errored") {
+        await admin.from("lessons").update({ status: "error" }).eq("id", lessonId);
+        lesson = { ...lesson, status: "error" };
+      }
+    }
+  } catch (err) {
+    console.error("mux reconcile:", (err as Error).message);
+  }
 }
 
 const ws = (lesson.written_setup ?? {}) as any;
