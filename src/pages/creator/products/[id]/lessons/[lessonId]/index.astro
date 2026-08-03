@@ -153,8 +153,9 @@ const audiblesVal: string[] = [
     ...plays.flatMap((p: any) => (Array.isArray(p.audibles) ? p.audibles : [])),
   ]),
 ];
-// Signed token for the creator to preview their own uploaded video.
+// Signed tokens for the creator to preview their own uploaded video.
 const previewToken = lesson.mux_playback_id ? await signPlayback(lesson.mux_playback_id, "video", 3600) : null;
+const previewThumbToken = lesson.mux_playback_id ? await signPlayback(lesson.mux_playback_id, "thumbnail", 3600) : null;
 
 // Position of this lesson in the ordered list, so the inside preview opens on it.
 const { data: lessonIds } = await admin
@@ -214,6 +215,7 @@ const statusColor: Record<string, string> = {
             <mux-player class="mt-4 block aspect-video w-full overflow-hidden rounded"
               playback-id={lesson.mux_playback_id}
               playback-token={previewToken}
+              thumbnail-token={previewThumbToken || undefined}
               stream-type="on-demand"></mux-player>
           ) : lesson.status === "ready" ? (
             <p class="mt-4 text-sm text-brand-silver">Video ready. (Signed playback needs Mux signing keys.)</p>

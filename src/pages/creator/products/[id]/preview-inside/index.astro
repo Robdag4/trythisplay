@@ -24,6 +24,7 @@ const lesson = ebook.data.lessons[current];
 
 // Creator previews their own (signed-policy) video.
 const playbackToken = lesson?.playbackId ? await signPlayback(lesson.playbackId, "video", 3600) : null;
+const thumbnailToken = lesson?.playbackId ? await signPlayback(lesson.playbackId, "thumbnail", 3600) : null;
 
 // Embedded mode (?embed=1): rendered inside the lesson-editor iframe. Hides
 // the draft banner and listens for live field updates posted from the editor.
@@ -42,6 +43,7 @@ const linkPrefix = `/creator/products/${id}/preview-inside/?${embed ? "embed=1&"
       {ebook}
       {current}
       {playbackToken}
+      {thumbnailToken}
       mode="preview"
       {linkPrefix}
     />

@@ -49,6 +49,8 @@ function signerClient(): Mux | null {
 /**
  * Create a Direct Upload with signed playback policy. Returns the upload URL
  * (for the browser uploader) and the Mux upload id (stored on the lesson).
+ * The audio-only static rendition is requested so AI transcription can fetch
+ * a lightweight audio file later.
  */
 export async function createDirectUpload(corsOrigin: string): Promise<{ url: string; uploadId: string } | null> {
   const mux = muxClient();
@@ -57,6 +59,7 @@ export async function createDirectUpload(corsOrigin: string): Promise<{ url: str
     cors_origin: corsOrigin,
     new_asset_settings: {
       playback_policies: ["signed"],
+      static_renditions: [{ resolution: "audio-only" }],
     },
   });
   if (!upload.url) return null;
@@ -90,6 +93,25 @@ export async function getAssetInfo(assetId: string) {
   const asset = await mux.video.assets.retrieve(assetId);
   const playbackId = asset.playback_ids?.[0]?.id ?? null;
   return { playbackId, duration: asset.duration ?? null, status: asset.status };
+}
+
+/**
+ * Ensure an existing asset has the audio-only static rendition (used before
+ * transcription for assets uploaded before renditions were requested).
+ */
+export async function ensureAudioRendition(assetId: string): Promise<void> {
+  const mux = muxClient();
+  if (!mux) return;
+  try {
+    const asset = await mux.video.assets.retrieve(assetId);
+    const existing = (asset as any).static_renditions?.files ?? [];
+    const hasAudio = existing.some((f: any) => f?.resolution === "audio-only" || f?.name === "audio.m4a");
+    if (!hasAudio) {
+      await (mux.video.assets as any).createStaticRendition(assetId, { resolution: "audio-only" });
+    }
+  } catch (err) {
+    console.error("ensureAudioRendition:", (err as Error).message);
+  }
 }
 
 /**

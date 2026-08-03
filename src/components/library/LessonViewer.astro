@@ -15,6 +15,7 @@ interface Props {
   current: number;
   completed?: Set<number>;
   playbackToken?: string | null;
+  thumbnailToken?: string | null;
   mode?: "customer" | "preview";
   /** href for lesson i is `${linkPrefix}${i}` */
   linkPrefix: string;
@@ -25,6 +26,7 @@ const {
   current,
   completed = new Set<number>(),
   playbackToken = null,
+  thumbnailToken = null,
   mode = "customer",
   linkPrefix,
 } = Astro.props;
@@ -81,6 +83,7 @@ const hasSetup = Boolean(formation || plays.length || audibles.length);
         <mux-player
           playback-id={lesson.playbackId}
           playback-token={playbackToken}
+          thumbnail-token={thumbnailToken || undefined}
           metadata-video-title={lesson.title}
           accent-color="#E11D2E"
           style="width:100%;height:100%;"

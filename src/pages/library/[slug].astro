@@ -36,8 +36,9 @@ const requested = Number(Astro.url.searchParams.get("lesson") ?? 0);
 const current = Math.min(Math.max(requested, 0), Math.max(ebook.data.lessons.length - 1, 0));
 const lesson = ebook.data.lessons[current];
 
-// Signed playback token for the entitled buyer (assets use signed policy).
+// Signed playback + thumbnail tokens for the entitled buyer (signed policy).
 const playbackToken = lesson?.playbackId ? await signPlayback(lesson.playbackId, "video", 3600) : null;
+const thumbnailToken = lesson?.playbackId ? await signPlayback(lesson.playbackId, "thumbnail", 3600) : null;
 ---
 
 <BaseLayout
@@ -50,6 +51,7 @@ const playbackToken = lesson?.playbackId ? await signPlayback(lesson.playbackId,
     {current}
     {completed}
     {playbackToken}
+    {thumbnailToken}
     mode="customer"
     linkPrefix={`/library/${ebook.slug}/?lesson=`}
   />

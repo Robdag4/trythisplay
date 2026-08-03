@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { requireCreator } from "../../../../../lib/creator";
 import { supabaseAdmin } from "../../../../../lib/supabase";
-import { signedAudioUrl, muxSigningConfigured } from "../../../../../lib/mux";
+import { signedAudioUrl, muxSigningConfigured, ensureAudioRendition } from "../../../../../lib/mux";
 import { transcribeUrl, draftWrittenSetup, aiConfigured } from "../../../../../lib/ai";
 
 export const prerender = false;
@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   const admin = supabaseAdmin();
   const { data: lesson } = await admin
     .from("lessons")
-    .select("id, product_id, status, mux_playback_id, transcript, transcribe_count, last_transcribe_at, products!inner(creator_id, status)")
+    .select("id, product_id, status, mux_asset_id, mux_playback_id, transcript, transcribe_count, last_transcribe_at, products!inner(creator_id, status)")
     .eq("id", lessonId)
     .maybeSingle();
 
@@ -51,6 +51,9 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     // Reuse an existing transcript if we have one; else transcribe the audio.
     let transcript = lesson.transcript ?? "";
     if (!transcript) {
+      // Assets uploaded before audio renditions were requested at upload time
+      // need one generated now (no-op when it already exists).
+      if (lesson.mux_asset_id) await ensureAudioRendition(lesson.mux_asset_id);
       const audioUrl = await signedAudioUrl(lesson.mux_playback_id);
       if (!audioUrl) return json({ error: "Could not build audio URL." }, 500);
       transcript = (await transcribeUrl(audioUrl)) ?? "";
@@ -74,7 +77,11 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
 
     return json({ written_setup: setup });
   } catch (err) {
-    console.error("draft-setup failed:", (err as Error).message);
+    const msg = (err as Error).message || "";
+    console.error("draft-setup failed:", msg);
+    if (msg.includes("fetch media")) {
+      return json({ error: "The audio track is still being prepared — try again in a minute." }, 503);
+    }
     return json({ error: "AI drafting failed. Try again." }, 502);
   }
 };
