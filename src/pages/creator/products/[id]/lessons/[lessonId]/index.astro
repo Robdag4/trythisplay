@@ -33,6 +33,7 @@ const COVERAGES = [
   ["cover0", "Cover 0"],
   ["cover1", "Cover 1"],
   ["cover2", "Cover 2"],
+  ["cover2man", "2 Man Under"],
   ["cover3", "Cover 3"],
   ["cover4", "Cover 4"],
 ] as const;
@@ -449,7 +450,7 @@ const statusColor: Record<string, string> = {
             };
             set("play", p.play);
             const ps = (p.pre_snap && typeof p.pre_snap === "object" && !Array.isArray(p.pre_snap)) ? p.pre_snap : { any: p.pre_snap };
-            ["any", "cover0", "cover1", "cover2", "cover3", "cover4"].forEach((ck) => {
+            ["any", "cover0", "cover1", "cover2", "cover2man", "cover3", "cover4"].forEach((ck) => {
               set("pre_snap][" + ck, lines(ps[ck]));
             });
             set("reads", lines(p.reads));
@@ -494,7 +495,7 @@ const statusColor: Record<string, string> = {
             return el ? el.value : "";
           };
           const preSnap = {};
-          ["any", "cover0", "cover1", "cover2", "cover3", "cover4"].forEach((ck) => {
+          ["any", "cover0", "cover1", "cover2", "cover2man", "cover3", "cover4"].forEach((ck) => {
             const v = lines(get("pre_snap][" + ck));
             if (v.length) preSnap[ck] = v;
           });

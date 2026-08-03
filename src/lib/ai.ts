@@ -72,7 +72,7 @@ export async function draftWrittenSetup(transcript: string): Promise<WrittenSetu
     '- "audibles": string[] — the audibles the creator says to set up from this formation (play names to audible to). Formation-level, NOT per play.\n' +
     '- "plays": array — one entry PER PLAY/CONCEPT taught in the lesson. Each play object has:\n' +
     '    - "play": string — the play name.\n' +
-    '    - "pre_snap": object — pre-snap adjustments GROUPED BY THE COVERAGE THEY BEAT. Allowed keys: "any", "cover0", "cover1", "cover2", "cover3", "cover4". Each value is a string[] of short adjustments (hot routes, motions, protection changes). When the creator says an adjustment is for a specific coverage ("against Cover 3, streak the X"), put it under that coverage key; adjustments that always apply go under "any". Omit empty keys.\n' +
+    '    - "pre_snap": object — pre-snap adjustments GROUPED BY THE COVERAGE THEY BEAT. Allowed keys: "any", "cover0", "cover1", "cover2", "cover2man" (2 Man Under / Cover 2 Man), "cover3", "cover4". Each value is a string[] of short adjustments (hot routes, motions, protection changes). When the creator says an adjustment is for a specific coverage ("against Cover 3, streak the X"; "versus 2 man, wheel the back"), put it under that coverage key; adjustments that always apply go under "any". Omit empty keys.\n' +
     '    - "reads": string[] — the read progression IN ORDER (first read first).\n' +
     '    - "notes": string — anything else important for this play (timing, hash, situations).\n' +
     "Keep every array item short and actionable. If the lesson only teaches one play, plays has one entry.";
@@ -91,7 +91,7 @@ export async function draftWrittenSetup(transcript: string): Promise<WrittenSetu
   try {
     const j = JSON.parse(text);
     const strs = (a: any) => (Array.isArray(a) ? a.map(String).filter(Boolean) : []);
-    const COVER_KEYS = ["any", "cover0", "cover1", "cover2", "cover3", "cover4"];
+    const COVER_KEYS = ["any", "cover0", "cover1", "cover2", "cover2man", "cover3", "cover4"];
     const normPlay = (p: any): DraftPlay => {
       const ps: Record<string, string[]> = {};
       const src = p?.pre_snap;
