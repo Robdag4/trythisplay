@@ -1,5 +1,6 @@
 import type { AstroCookies } from "astro";
 import { getUser } from "./auth";
+import { supabaseAdmin } from "./supabase";
 
 export interface AdminRow {
   user_id: string;
@@ -9,6 +10,9 @@ export interface AdminRow {
 /**
  * Gate for /admin/* routes and admin APIs. Checks admin_users on every request.
  * Returns { ok, user, admin, supabase } or a redirect/response target.
+ *
+ * NOTE: admin_users is RLS default-deny (no policies), so the lookup MUST use
+ * the service-role client — a user-scoped select always returns nothing.
  *
  * Usage in a page:
  *   const gate = await requireAdmin(Astro.request, Astro.cookies, "/admin/...");
@@ -26,7 +30,7 @@ export async function requireAdmin(
     return { ok: false as const, status: 401, redirect: `/login/?next=${encodeURIComponent(path)}`, user: null, admin: null, supabase };
   }
 
-  const { data: admin } = await supabase
+  const { data: admin } = await supabaseAdmin()
     .from("admin_users")
     .select("user_id, role")
     .eq("user_id", user.id)
