@@ -244,7 +244,7 @@ const hasFreePreviewPlayers = Object.keys(previewTokens).length > 0;
                   )}
                 </div>
                 {previewTokens[i]?.video && (
-                  <div id={`free-preview-${i}`} class="mt-4" hidden>
+                  <div id={`free-preview-${i}`} class="mt-4" hidden style="display: none;">
                     <mux-player
                       class="block aspect-video w-full overflow-hidden rounded border border-brand-line"
                       playback-id={lesson.playbackId}
@@ -312,8 +312,10 @@ const hasFreePreviewPlayers = Object.keys(previewTokens).length > 0;
           e.preventDefault();
           const box = document.getElementById(btn.getAttribute("data-target"));
           if (!box) return;
-          box.hidden = !box.hidden;
-          if (box.hidden) {
+          const closing = box.style.display !== "none";
+          box.style.display = closing ? "none" : "";
+          box.hidden = closing;
+          if (closing) {
             const player = box.querySelector("mux-player");
             if (player && typeof player.pause === "function") player.pause();
           }
