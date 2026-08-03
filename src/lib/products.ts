@@ -45,6 +45,7 @@ export interface ProductData {
   coverImage?: string;
   coverImageAlt?: string;
   lessons: {
+    id?: string;
     title: string;
     runtime: string;
     description?: string;
@@ -86,6 +87,7 @@ function toEntry(row: any): ProductEntry {
     .slice()
     .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     .map((l: any) => ({
+      id: l.id,
       title: l.title ?? "",
       runtime: secondsToRuntime(l.runtime_seconds),
       description: l.description ?? undefined,

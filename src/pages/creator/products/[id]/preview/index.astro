@@ -103,6 +103,40 @@ const embed = Astro.url.searchParams.get("embed") === "1";
           case "wtif":
             setList("wtif", v);
             break;
+          case "lesson": {
+            // Live-update one lesson row in the lesson list.
+            const patch = msg.value || {};
+            const row = document.querySelector('[data-lesson-id="' + msg.lessonId + '"]');
+            if (!row) break;
+            if ("title" in patch)
+              row.querySelectorAll('[data-lesson="title"]').forEach((el) => {
+                el.textContent = patch.title || "Lesson title";
+              });
+            if ("description" in patch)
+              row.querySelectorAll('[data-lesson="description"]').forEach((el) => {
+                el.textContent = patch.description;
+                el.classList.toggle("hidden", !String(patch.description ?? "").trim());
+              });
+            if ("freePreview" in patch) {
+              row.querySelectorAll('[data-lesson="badge-free"]').forEach((el) =>
+                el.classList.toggle("hidden", !patch.freePreview)
+              );
+              row.querySelectorAll('[data-lesson="badge-locked"]').forEach((el) =>
+                el.classList.toggle("hidden", !!patch.freePreview)
+              );
+            }
+            break;
+          }
+          case "lesson-focus": {
+            // Scroll to and highlight the lesson being edited.
+            const row = document.querySelector('[data-lesson-id="' + msg.lessonId + '"]');
+            if (row) {
+              row.scrollIntoView({ behavior: "smooth", block: "center" });
+              row.style.outline = "2px solid rgba(225,29,46,0.6)";
+              row.style.outlineOffset = "4px";
+            }
+            break;
+          }
           case "cover": {
             // v is a blob: URL created by the editor for the freshly-picked
             // file; the real upload happens on Save.

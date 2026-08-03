@@ -97,173 +97,169 @@ const statusColor: Record<string, string> = {
 ---
 
 <BaseLayout title={`${lesson.title || "Lesson"} | Creator Portal`} description="Edit lesson." noindex={true}>
-  <section class="container-site max-w-2xl py-10">
-    <a href={`${path}?tab=lessons`} class="text-sm text-brand-silver hover:text-brand-white">← Back to lessons</a>
-    <h1 class="h-display mt-2 text-2xl">Edit Lesson</h1>
+  <section class="container-site py-10">
+    <div class="grid items-start gap-8 xl:grid-cols-2">
+      <div class="max-w-2xl">
+        <a href={`${path}?tab=lessons`} class="text-sm text-brand-silver hover:text-brand-white">← Back to lessons</a>
+        <h1 class="h-display mt-2 text-2xl">Edit Lesson</h1>
 
-    {!editable && (
-      <p class="mt-4 border border-yellow-600/40 bg-yellow-950/15 p-3 text-sm text-yellow-300">
-        This product is {product.status.replace("_", " ")} and locked for editing.
-      </p>
-    )}
-    {notice && <p class="mt-4 border border-emerald-600/40 bg-emerald-950/15 p-3 text-sm text-emerald-300">{notice}</p>}
-    {error && <p class="mt-4 border border-brand-red/50 bg-brand-red/10 p-3 text-sm">{error}</p>}
-
-    <!-- #9: how this lesson appears inside the ebook page -->
-    <div class="mt-6 rounded-lg border border-brand-line bg-brand-panel/60 p-4">
-      <div class="text-[10px] font-bold uppercase tracking-widest text-brand-silver">Preview · how this lesson shows on your ebook page</div>
-      <div class="mt-3 aspect-video w-full overflow-hidden rounded border border-brand-line bg-brand-charcoal">
-        {lesson.mux_playback_id && muxSigningConfigured && previewToken ? (
-          <mux-player class="block h-full w-full" playback-id={lesson.mux_playback_id} playback-token={previewToken} stream-type="on-demand"></mux-player>
-        ) : (
-          <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-center text-brand-silver">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-            <span class="text-xs">{lesson.status === "processing" ? "Processing video…" : "Video placeholder — upload below"}</span>
-          </div>
-        )}
-      </div>
-      <div class="mt-3 flex items-center gap-3 border-y border-brand-line py-3">
-        <span class="font-mono text-sm text-brand-silver">01</span>
-        <div class="flex-1">
-          <p class="font-semibold">{lesson.title || "Lesson title"}</p>
-          {lesson.description && <p class="mt-1 text-sm text-brand-silver">{lesson.description}</p>}
-        </div>
-        {lesson.free_preview ? (
-          <span class="border border-brand-red/50 bg-brand-red/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-brand-red">Free preview</span>
-        ) : (
-          <span class="text-brand-silver" title="Unlocks after purchase">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-          </span>
-        )}
-      </div>
-    </div>
-
-    <!-- Lesson meta -->
-    <form method="POST" class={`mt-6 grid gap-4 ${editable ? "" : "pointer-events-none opacity-60"}`}>
-      <input type="hidden" name="_action" value="meta" />
-      <div>
-        <label class="block text-sm font-semibold" for="title">Lesson title</label>
-        <input id="title" name="title" type="text" required maxlength="120" value={lesson.title}
-          class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold" for="description">Description (optional)</label>
-        <textarea id="description" name="description" rows="2"
-          class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">{lesson.description ?? ""}</textarea>
-      </div>
-      <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="free_preview" checked={lesson.free_preview} /> Free preview (viewable before purchase)
-      </label>
-      {editable && <button type="submit" class="btn-primary w-fit">Save Lesson</button>}
-    </form>
-
-    <!-- Video -->
-    <div class="mt-10 border-t border-brand-line pt-8">
-      <div class="flex items-center justify-between">
-        <h2 class="h-display text-xl">Video</h2>
-        <span class={`text-xs font-bold uppercase ${statusColor[lesson.status] ?? "text-brand-silver"}`}>{lesson.status}</span>
-      </div>
-
-      {lesson.mux_playback_id && muxSigningConfigured && previewToken ? (
-        <mux-player class="mt-4 block aspect-video w-full overflow-hidden rounded"
-          playback-id={lesson.mux_playback_id}
-          playback-token={previewToken}
-          stream-type="on-demand"></mux-player>
-      ) : lesson.status === "ready" ? (
-        <p class="mt-4 text-sm text-brand-silver">Video ready. (Signed playback needs Mux signing keys.)</p>
-      ) : lesson.status === "processing" ? (
-        <p class="mt-4 text-sm text-yellow-400">Processing your upload — refresh in a moment.</p>
-      ) : null}
-
-      {editable && (
-        muxConfigured ? (
-          <div class="mt-4">
-            <mux-uploader id="uploader" class="block"></mux-uploader>
-            <p class="mt-2 text-xs text-brand-silver">Drag a video in or click to browse. It processes automatically.</p>
-          </div>
-        ) : (
-          <p class="mt-4 border border-brand-line bg-brand-panel p-4 text-sm text-brand-silver">
-            Video uploads are coming online — the platform's video service isn't connected yet.
+        {!editable && (
+          <p class="mt-4 border border-yellow-600/40 bg-yellow-950/15 p-3 text-sm text-yellow-300">
+            This product is {product.status.replace("_", " ")} and locked for editing.
           </p>
-        )
-      )}
-    </div>
+        )}
+        {notice && <p class="mt-4 border border-emerald-600/40 bg-emerald-950/15 p-3 text-sm text-emerald-300">{notice}</p>}
+        {error && <p class="mt-4 border border-brand-red/50 bg-brand-red/10 p-3 text-sm">{error}</p>}
 
-    <!-- Written setup -->
-    <div class="mt-10 border-t border-brand-line pt-8">
-      <div class="flex items-center justify-between">
-        <h2 class="h-display text-xl">Written Setup</h2>
-        {lesson.written_setup_approved_at
-          ? <span class="text-xs font-bold uppercase text-emerald-400">Approved</span>
-          : <span class="text-xs font-bold uppercase text-brand-silver">Not approved</span>}
+        <!-- Lesson meta -->
+        <form method="POST" class={`mt-6 grid gap-4 ${editable ? "" : "pointer-events-none opacity-60"}`}>
+          <input type="hidden" name="_action" value="meta" />
+          <div>
+            <label class="block text-sm font-semibold" for="title">Lesson title</label>
+            <input id="title" name="title" type="text" required maxlength="120" value={lesson.title}
+              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold" for="description">Description (optional)</label>
+            <textarea id="description" name="description" rows="2"
+              class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-3 text-sm focus:border-brand-red">{lesson.description ?? ""}</textarea>
+          </div>
+          <label class="flex items-center gap-2 text-sm">
+            <input id="free_preview" type="checkbox" name="free_preview" checked={lesson.free_preview} /> Free preview (viewable before purchase)
+          </label>
+          {editable && <button type="submit" class="btn-primary w-fit">Save Lesson</button>}
+        </form>
+
+        <!-- Video -->
+        <div class="mt-10 border-t border-brand-line pt-8">
+          <div class="flex items-center justify-between">
+            <h2 class="h-display text-xl">Video</h2>
+            <span class={`text-xs font-bold uppercase ${statusColor[lesson.status] ?? "text-brand-silver"}`}>{lesson.status}</span>
+          </div>
+
+          {lesson.mux_playback_id && muxSigningConfigured && previewToken ? (
+            <mux-player class="mt-4 block aspect-video w-full overflow-hidden rounded"
+              playback-id={lesson.mux_playback_id}
+              playback-token={previewToken}
+              stream-type="on-demand"></mux-player>
+          ) : lesson.status === "ready" ? (
+            <p class="mt-4 text-sm text-brand-silver">Video ready. (Signed playback needs Mux signing keys.)</p>
+          ) : lesson.status === "processing" ? (
+            <p class="mt-4 text-sm text-yellow-400">Processing your upload — refresh in a moment.</p>
+          ) : null}
+
+          {editable && (
+            muxConfigured ? (
+              <div class="mt-4">
+                <mux-uploader id="uploader" class="block"></mux-uploader>
+                <p class="mt-2 text-xs text-brand-silver">Drag a video in or click to browse. It processes automatically.</p>
+              </div>
+            ) : (
+              <p class="mt-4 border border-brand-line bg-brand-panel p-4 text-sm text-brand-silver">
+                Video uploads are coming online — the platform's video service isn't connected yet.
+              </p>
+            )
+          )}
+        </div>
+
+        <!-- Written setup -->
+        <div class="mt-10 border-t border-brand-line pt-8">
+          <div class="flex items-center justify-between">
+            <h2 class="h-display text-xl">Written Setup</h2>
+            {lesson.written_setup_approved_at
+              ? <span class="text-xs font-bold uppercase text-emerald-400">Approved</span>
+              : <span class="text-xs font-bold uppercase text-brand-silver">Not approved</span>}
+          </div>
+
+          {editable && (
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+              {aiConfigured ? (
+                <button id="ai-draft" type="button" class="btn-secondary text-sm"
+                  data-lesson={lessonId} disabled={lesson.status !== "ready"}>
+                  ✨ Generate from video
+                </button>
+              ) : (
+                <span class="text-xs text-brand-silver">AI drafting unavailable — connect an AI provider to enable.</span>
+              )}
+              {lesson.status !== "ready" && aiConfigured && (
+                <span class="text-xs text-brand-silver">Upload a video first.</span>
+              )}
+              <span id="ai-status" class="text-xs text-brand-silver"></span>
+            </div>
+          )}
+
+          <form method="POST" id="setup-form" class={`mt-4 grid gap-4 ${editable ? "" : "pointer-events-none opacity-60"}`}>
+            <input type="hidden" name="_action" value="setup" />
+            <div>
+              <label class="block text-sm font-semibold" for="formation">Formation</label>
+              <input id="formation" name="formation" type="text" value={formationVal}
+                class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-2.5 text-sm focus:border-brand-red" />
+              <p class="mt-1 text-xs text-brand-silver">One formation per lesson. Add a play for each concept you run from it.</p>
+            </div>
+
+            <div id="plays" class="grid gap-4">
+              {plays.map((p, i) => (
+                <fieldset class="play-block rounded border border-brand-line p-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-brand-silver">Play <span class="play-num">{i + 1}</span></span>
+                    {editable && <button type="button" class="remove-play text-xs text-brand-red">Remove</button>}
+                  </div>
+                  <div class="mt-3 grid gap-3">
+                    <input name={`plays[${i}][play]`} type="text" placeholder="Play name" value={p.play ?? ""}
+                      class="w-full border border-brand-line bg-brand-panel px-4 py-2.5 text-sm focus:border-brand-red" />
+                    <div>
+                      <label class="block text-xs font-semibold text-brand-silver">Audibles (one per line)</label>
+                      <textarea name={`plays[${i}][audibles]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.audibles)}</textarea>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-brand-silver">Pre-snap adjustments (one per line)</label>
+                      <textarea name={`plays[${i}][pre_snap]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.pre_snap)}</textarea>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-brand-silver">Reads in order (one per line)</label>
+                      <textarea name={`plays[${i}][reads]`} rows="3" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.reads)}</textarea>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-brand-silver">Notes</label>
+                      <textarea name={`plays[${i}][notes]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{p.notes ?? ""}</textarea>
+                    </div>
+                  </div>
+                </fieldset>
+              ))}
+            </div>
+
+            {editable && <button type="button" id="add-play" class="btn-secondary w-fit text-sm">+ Add Play</button>}
+
+            {editable && (
+              <div class="flex gap-3">
+                <button type="submit" name="approve" value="0" class="btn-secondary">Save Draft</button>
+                <button type="submit" name="approve" value="1" class="btn-primary">Approve Setup</button>
+              </div>
+            )}
+          </form>
+        </div>
       </div>
 
-      {editable && (
-        <div class="mt-3 flex flex-wrap items-center gap-3">
-          {aiConfigured ? (
-            <button id="ai-draft" type="button" class="btn-secondary text-sm"
-              data-lesson={lessonId} disabled={lesson.status !== "ready"}>
-              ✨ Generate from video
-            </button>
-          ) : (
-            <span class="text-xs text-brand-silver">AI drafting unavailable — connect an AI provider to enable.</span>
-          )}
-          {lesson.status !== "ready" && aiConfigured && (
-            <span class="text-xs text-brand-silver">Upload a video first.</span>
-          )}
-          <span id="ai-status" class="text-xs text-brand-silver"></span>
+      <!-- Live product-page preview, scrolled to this lesson's row. -->
+      <aside class="xl:sticky xl:top-8 xl:self-start">
+        <div class="text-[10px] font-bold uppercase tracking-widest text-brand-silver">Product page preview — live · your lesson is highlighted</div>
+        <div class="mt-3 overflow-hidden border border-brand-line bg-brand-black" style="height: 72vh;">
+          <iframe
+            id="page-preview-frame"
+            src={`/creator/products/${id}/preview/?embed=1`}
+            title="Product page preview"
+            style="width: 200%; height: 200%; transform: scale(0.5); transform-origin: top left; border: 0;"
+          ></iframe>
         </div>
-      )}
-
-      <form method="POST" id="setup-form" class={`mt-4 grid gap-4 ${editable ? "" : "pointer-events-none opacity-60"}`}>
-        <input type="hidden" name="_action" value="setup" />
-        <div>
-          <label class="block text-sm font-semibold" for="formation">Formation</label>
-          <input id="formation" name="formation" type="text" value={formationVal}
-            class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-2.5 text-sm focus:border-brand-red" />
-          <p class="mt-1 text-xs text-brand-silver">One formation per lesson. Add a play for each concept you run from it.</p>
-        </div>
-
-        <div id="plays" class="grid gap-4">
-          {plays.map((p, i) => (
-            <fieldset class="play-block rounded border border-brand-line p-4">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-brand-silver">Play <span class="play-num">{i + 1}</span></span>
-                {editable && <button type="button" class="remove-play text-xs text-brand-red">Remove</button>}
-              </div>
-              <div class="mt-3 grid gap-3">
-                <input name={`plays[${i}][play]`} type="text" placeholder="Play name" value={p.play ?? ""}
-                  class="w-full border border-brand-line bg-brand-panel px-4 py-2.5 text-sm focus:border-brand-red" />
-                <div>
-                  <label class="block text-xs font-semibold text-brand-silver">Audibles (one per line)</label>
-                  <textarea name={`plays[${i}][audibles]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.audibles)}</textarea>
-                </div>
-                <div>
-                  <label class="block text-xs font-semibold text-brand-silver">Pre-snap adjustments (one per line)</label>
-                  <textarea name={`plays[${i}][pre_snap]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.pre_snap)}</textarea>
-                </div>
-                <div>
-                  <label class="block text-xs font-semibold text-brand-silver">Reads in order (one per line)</label>
-                  <textarea name={`plays[${i}][reads]`} rows="3" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.reads)}</textarea>
-                </div>
-                <div>
-                  <label class="block text-xs font-semibold text-brand-silver">Notes</label>
-                  <textarea name={`plays[${i}][notes]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{p.notes ?? ""}</textarea>
-                </div>
-              </div>
-            </fieldset>
-          ))}
-        </div>
-
-        {editable && <button type="button" id="add-play" class="btn-secondary w-fit text-sm">+ Add Play</button>}
-
-        {editable && (
-          <div class="flex gap-3">
-            <button type="submit" name="approve" value="0" class="btn-secondary">Save Draft</button>
-            <button type="submit" name="approve" value="1" class="btn-primary">Approve Setup</button>
-          </div>
-        )}
-      </form>
+        <p class="mt-2 text-[11px] leading-relaxed text-brand-silver">
+          This is your public ebook page — the preview scrolls to this lesson in
+          the lesson list, and the title, description, and free-preview badge
+          update live as you type. Save to persist. The written setup isn't
+          shown here: customers only see it inside their library after
+          purchasing. Video runtime appears once the upload finishes processing
+          and you save.
+        </p>
+      </aside>
     </div>
   </section>
 
@@ -355,6 +351,41 @@ const statusColor: Record<string, string> = {
         } finally {
           aiBtn.removeAttribute("disabled");
         }
+      });
+    }
+
+    // Live product-page preview: scroll to this lesson on load, then mirror
+    // the title / description / free-preview fields as the creator types.
+    const frame = document.getElementById("page-preview-frame");
+    if (frame) {
+      const send = (field, extra) => {
+        if (!frame.contentWindow) return;
+        frame.contentWindow.postMessage(
+          Object.assign({ type: "ttp-preview", field: field }, extra),
+          window.location.origin
+        );
+      };
+      const patch = () => {
+        const titleEl = document.getElementById("title");
+        const descEl = document.getElementById("description");
+        const fpEl = document.getElementById("free_preview");
+        send("lesson", {
+          lessonId: lessonId,
+          value: {
+            title: titleEl ? titleEl.value : "",
+            description: descEl ? descEl.value : "",
+            freePreview: !!(fpEl && fpEl.checked),
+          },
+        });
+      };
+      ["title", "description", "free_preview"].forEach((fid) => {
+        const el = document.getElementById(fid);
+        if (!el) return;
+        el.addEventListener("input", patch);
+        el.addEventListener("change", patch);
+      });
+      frame.addEventListener("load", () => {
+        setTimeout(() => send("lesson-focus", { lessonId: lessonId }), 400);
       });
     }
   </script>
