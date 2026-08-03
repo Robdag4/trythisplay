@@ -20,14 +20,19 @@ function client(): OpenAI | null {
   return _client;
 }
 
+export interface DraftPlay {
+  play: string;
+  /** Pre-snap adjustments keyed by coverage: any, cover0..cover4 */
+  pre_snap: Record<string, string[]>;
+  reads: string[];
+  notes: string;
+}
+
 export interface WrittenSetup {
   formation: string;
-  play: string;
+  /** Formation-level audibles (the set to configure from this formation). */
   audibles: string[];
-  pre_snap: string[];
-  reads: string[];
-  counters: string[];
-  notes: string;
+  plays: DraftPlay[];
 }
 
 /** Transcribe an audio/video URL (e.g. a Mux static rendition) to text. */
@@ -57,13 +62,20 @@ export async function draftWrittenSetup(transcript: string): Promise<WrittenSetu
   if (!ai) return null;
 
   const system =
-    "You convert a Madden football video-lesson transcript into a concise, structured written setup. " +
-    "Only use information supported by the transcript; do not invent plays. Return strict JSON.";
+    "You convert a Madden football video-lesson transcript into a concise, structured written setup " +
+    "matching a specific editor layout. Only use information supported by the transcript; do not invent " +
+    "plays or adjustments. Return strict JSON.";
   const user =
     `Transcript:\n"""\n${transcript.slice(0, 12000)}\n"""\n\n` +
-    "Produce JSON with keys: formation (string), play (string), audibles (string[]), " +
-    "pre_snap (string[]), reads (string[] in order), counters (string[]), notes (string). " +
-    "Keep each array item short and actionable.";
+    "Produce JSON with EXACTLY these keys:\n" +
+    '- "formation": string — the ONE formation this lesson teaches from (e.g. "Gun Bunch").\n' +
+    '- "audibles": string[] — the audibles the creator says to set up from this formation (play names to audible to). Formation-level, NOT per play.\n' +
+    '- "plays": array — one entry PER PLAY/CONCEPT taught in the lesson. Each play object has:\n' +
+    '    - "play": string — the play name.\n' +
+    '    - "pre_snap": object — pre-snap adjustments GROUPED BY THE COVERAGE THEY BEAT. Allowed keys: "any", "cover0", "cover1", "cover2", "cover3", "cover4". Each value is a string[] of short adjustments (hot routes, motions, protection changes). When the creator says an adjustment is for a specific coverage ("against Cover 3, streak the X"), put it under that coverage key; adjustments that always apply go under "any". Omit empty keys.\n' +
+    '    - "reads": string[] — the read progression IN ORDER (first read first).\n' +
+    '    - "notes": string — anything else important for this play (timing, hash, situations).\n' +
+    "Keep every array item short and actionable. If the lesson only teaches one play, plays has one entry.";
 
   const completion = await ai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -78,14 +90,34 @@ export async function draftWrittenSetup(transcript: string): Promise<WrittenSetu
   if (!text) return null;
   try {
     const j = JSON.parse(text);
+    const strs = (a: any) => (Array.isArray(a) ? a.map(String).filter(Boolean) : []);
+    const COVER_KEYS = ["any", "cover0", "cover1", "cover2", "cover3", "cover4"];
+    const normPlay = (p: any): DraftPlay => {
+      const ps: Record<string, string[]> = {};
+      const src = p?.pre_snap;
+      if (Array.isArray(src)) {
+        const v = strs(src);
+        if (v.length) ps.any = v;
+      } else if (src && typeof src === "object") {
+        for (const k of COVER_KEYS) {
+          const v = strs(src[k]);
+          if (v.length) ps[k] = v;
+        }
+      }
+      return {
+        play: String(p?.play ?? ""),
+        pre_snap: ps,
+        reads: strs(p?.reads),
+        notes: String(p?.notes ?? ""),
+      };
+    };
+    let plays: DraftPlay[] = Array.isArray(j.plays) ? j.plays.map(normPlay) : [];
+    // Tolerate a legacy/misshaped single-play response.
+    if (!plays.length && (j.play || j.pre_snap || j.reads)) plays = [normPlay(j)];
     return {
       formation: String(j.formation ?? ""),
-      play: String(j.play ?? ""),
-      audibles: Array.isArray(j.audibles) ? j.audibles.map(String) : [],
-      pre_snap: Array.isArray(j.pre_snap) ? j.pre_snap.map(String) : [],
-      reads: Array.isArray(j.reads) ? j.reads.map(String) : [],
-      counters: Array.isArray(j.counters) ? j.counters.map(String) : [],
-      notes: String(j.notes ?? ""),
+      audibles: strs(j.audibles),
+      plays,
     };
   } catch {
     return null;

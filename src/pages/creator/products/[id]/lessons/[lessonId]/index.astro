@@ -432,12 +432,32 @@ const statusColor: Record<string, string> = {
           const ws = data.written_setup || {};
           const lines = (a) => (Array.isArray(a) ? a.join("\n") : "");
           const f = document.getElementById("formation"); if (f) f.value = ws.formation ?? "";
-          const setName = (n, v) => { const el = document.querySelector(`[name="${n}"]`); if (el) el.value = v ?? ""; };
           const aud = document.getElementById("audibles"); if (aud) aud.value = lines(ws.audibles);
-          setName("plays[0][play]", ws.play);
-          setName("plays[0][pre_snap][any]", lines(ws.pre_snap));
-          setName("plays[0][reads]", lines(ws.reads));
-          setName("plays[0][notes]", ws.notes);
+
+          // Fill one block per drafted play, creating blocks as needed.
+          let draftPlays = Array.isArray(ws.plays) ? ws.plays : [];
+          if (!draftPlays.length && (ws.play || ws.pre_snap || ws.reads)) draftPlays = [ws]; // legacy shape
+          const addBtn = document.getElementById("add-play");
+          while (addBtn && playsWrap.querySelectorAll(".play-block").length < draftPlays.length) addBtn.click();
+          const blocks = playsWrap.querySelectorAll(".play-block");
+          draftPlays.forEach((p, i) => {
+            const b = blocks[i];
+            if (!b) return;
+            const set = (suffix, v) => {
+              const el = b.querySelector('[name$="[' + suffix + ']"]');
+              if (el) el.value = v ?? "";
+            };
+            set("play", p.play);
+            const ps = (p.pre_snap && typeof p.pre_snap === "object" && !Array.isArray(p.pre_snap)) ? p.pre_snap : { any: p.pre_snap };
+            ["any", "cover0", "cover1", "cover2", "cover3", "cover4"].forEach((ck) => {
+              set("pre_snap][" + ck, lines(ps[ck]));
+            });
+            set("reads", lines(p.reads));
+            set("notes", p.notes);
+          });
+
+          // Programmatic value sets don't fire "input" — nudge the live preview.
+          if (f) f.dispatchEvent(new Event("input", { bubbles: true }));
           aiStatus.textContent = "Draft ready — review, edit, then Approve.";
         } catch (e) {
           aiStatus.textContent = "Couldn't draft: " + e.message;
