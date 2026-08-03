@@ -37,7 +37,9 @@ export async function transcribeUrl(mediaUrl: string): Promise<string | null> {
   const res = await fetch(mediaUrl);
   if (!res.ok) throw new Error(`fetch media ${res.status}`);
   const blob = await res.blob();
-  const file = new File([blob], "lesson-audio.mp4", { type: blob.type || "video/mp4" });
+  // The Mux static rendition is an M4A audio file — the filename extension
+  // must match or OpenAI rejects it with "Invalid file format".
+  const file = new File([blob], "lesson-audio.m4a", { type: "audio/mp4" });
   const out = await ai.audio.transcriptions.create({
     file,
     model: "whisper-1",
