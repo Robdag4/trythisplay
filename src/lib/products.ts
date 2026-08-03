@@ -52,6 +52,7 @@ export interface ProductData {
     freePreview: boolean;
     playbackId?: string;
     formation?: string;
+    audibles?: string[];
     plays?: any[];
   }[];
   whatYouWillLearn: string[];
@@ -96,6 +97,7 @@ function toEntry(row: any): ProductEntry {
       freePreview: !!l.free_preview,
       playbackId: l.mux_playback_id ?? undefined,
       formation: l.formation ?? undefined,
+      audibles: Array.isArray(l.written_setup?.audibles) ? l.written_setup.audibles : [],
       plays: Array.isArray(l.plays) ? l.plays : [],
     }));
 

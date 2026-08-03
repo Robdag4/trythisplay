@@ -78,16 +78,27 @@ const linkPrefix = `/creator/products/${id}/preview-inside/?${embed ? "embed=1&"
           const box = document.querySelector('[data-inside="setup"]');
           if (!wrap || !box) return;
           const formation = String(v.formation ?? "").trim();
+          const audibles = (Array.isArray(v.audibles) ? v.audibles : []).filter((a) => String(a).trim());
           const plays = (Array.isArray(v.plays) ? v.plays : []).filter((p) =>
             p && (
               String(p.play ?? "").trim() ||
-              ["audibles", "reads"].some((k) => Array.isArray(p[k]) && p[k].length) ||
+              (Array.isArray(p.reads) && p.reads.length) ||
               Object.keys(normPreSnap(p.pre_snap)).length ||
               String(p.notes ?? "").trim()
             )
           );
-          const has = formation || plays.length;
+          const has = formation || plays.length || audibles.length;
           wrap.classList.toggle("hidden", !has);
+
+          // Formation audibles column (far right).
+          const audWrap = document.querySelector('[data-inside="audibles-wrap"]');
+          const audUl = document.querySelector('[data-inside="audibles"]');
+          if (audWrap && audUl) {
+            audWrap.classList.toggle("hidden", !audibles.length);
+            audUl.innerHTML = audibles
+              .map((a) => '<li class="text-sm text-brand-silver">' + esc(a) + "</li>")
+              .join("");
+          }
 
           const list = (label, items, ordered) => {
             if (!items || !items.length) return "";
@@ -105,7 +116,6 @@ const linkPrefix = `/creator/products/${id}/preview-inside/?${embed ? "embed=1&"
           plays.forEach((p, i) => {
             html += '<div class="mt-4 border border-brand-line p-4">';
             html += '<p class="text-xs font-bold uppercase tracking-wider text-brand-red">Play ' + (i + 1) + (String(p.play ?? "").trim() ? " — " + esc(p.play) : "") + "</p>";
-            html += list("Audibles", p.audibles);
             const ps = normPreSnap(p.pre_snap);
             const covWithItems = COVERAGES.filter((c) => Array.isArray(ps[c[0]]) && ps[c[0]].length);
             if (covWithItems.length) {

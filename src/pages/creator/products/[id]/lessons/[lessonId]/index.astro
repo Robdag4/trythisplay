@@ -56,6 +56,7 @@ if (Astro.request.method === "POST" && editable) {
     notice = "Lesson saved.";
   } else if (action === "setup") {
     // #6 + #8: one formation per lesson, MULTIPLE plays, no counters field.
+    // Audibles are FORMATION-level (one set per lesson), not per play.
     const formation = String(form.get("formation") ?? "");
     const lines = (v: FormDataEntryValue | null) =>
       String(v ?? "").split("\n").map((s) => s.trim()).filter(Boolean);
@@ -69,7 +70,6 @@ if (Astro.request.method === "POST" && editable) {
     [...indices].sort((a, b) => a - b).forEach((i) => {
       const play = String(form.get(`plays[${i}][play]`) ?? "").trim();
       const notes = String(form.get(`plays[${i}][notes]`) ?? "");
-      const audibles = lines(form.get(`plays[${i}][audibles]`));
       const reads = lines(form.get(`plays[${i}][reads]`));
       // Pre-snap adjustments keyed by coverage; empty coverages are dropped.
       const pre_snap: Record<string, string[]> = {};
@@ -77,12 +77,13 @@ if (Astro.request.method === "POST" && editable) {
         const v = lines(form.get(`plays[${i}][pre_snap][${ck}]`));
         if (v.length) pre_snap[ck] = v;
       }
-      if (play || audibles.length || Object.keys(pre_snap).length || reads.length || notes) {
-        plays.push({ play, audibles, pre_snap, reads, notes });
+      if (play || Object.keys(pre_snap).length || reads.length || notes) {
+        plays.push({ play, pre_snap, reads, notes });
       }
     });
-    // Keep written_setup jsonb populated (first play) for back-compat / schema.
-    const ws = { formation, plays };
+    // Formation-level audibles live in written_setup jsonb (no schema change).
+    const audibles = lines(form.get("audibles"));
+    const ws = { formation, audibles, plays };
     const approve = String(form.get("approve") ?? "") === "1";
     await admin
       .from("lessons")
@@ -108,9 +109,16 @@ let plays: any[] = Array.isArray(lesson.plays) && lesson.plays.length ? lesson.p
 if (!plays.length && ws.play) {
   plays = [{ play: ws.play, audibles: ws.audibles ?? [], pre_snap: ws.pre_snap ?? [], reads: ws.reads ?? [], notes: ws.notes ?? "" }];
 }
-if (!plays.length) plays = [{ play: "", audibles: [], pre_snap: {}, reads: [], notes: "" }];
+if (!plays.length) plays = [{ play: "", pre_snap: {}, reads: [], notes: "" }];
 // Normalize legacy flat pre_snap arrays into the coverage-keyed shape.
 plays = plays.map((p) => ({ ...p, pre_snap: normPreSnap(p.pre_snap) }));
+// Formation-level audibles; migrate legacy per-play audibles into the set.
+const audiblesVal: string[] = [
+  ...new Set<string>([
+    ...(Array.isArray(ws.audibles) ? ws.audibles : []),
+    ...plays.flatMap((p: any) => (Array.isArray(p.audibles) ? p.audibles : [])),
+  ]),
+];
 // Signed token for the creator to preview their own uploaded video.
 const previewToken = lesson.mux_playback_id ? await signPlayback(lesson.mux_playback_id, "video", 3600) : null;
 
@@ -221,11 +229,19 @@ const statusColor: Record<string, string> = {
 
           <form method="POST" id="setup-form" class={`mt-4 grid gap-4 ${editable ? "" : "pointer-events-none opacity-60"}`}>
             <input type="hidden" name="_action" value="setup" />
-            <div>
-              <label class="block text-sm font-semibold" for="formation">Formation</label>
-              <input id="formation" name="formation" type="text" value={formationVal}
-                class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-2.5 text-sm focus:border-brand-red" />
-              <p class="mt-1 text-xs text-brand-silver">One formation per lesson. Add a play for each concept you run from it.</p>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="block text-sm font-semibold" for="formation">Formation</label>
+                <input id="formation" name="formation" type="text" value={formationVal}
+                  class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-2.5 text-sm focus:border-brand-red" />
+                <p class="mt-1 text-xs text-brand-silver">One formation per lesson. Add a play for each concept you run from it.</p>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold" for="audibles">Formation audibles (one per line)</label>
+                <textarea id="audibles" name="audibles" rows="3"
+                  class="mt-2 w-full border border-brand-line bg-brand-panel px-4 py-2.5 text-sm focus:border-brand-red">{audiblesVal.join("\n")}</textarea>
+                <p class="mt-1 text-xs text-brand-silver">Shown in their own column beside the plays.</p>
+              </div>
             </div>
 
             <div id="plays" class="grid gap-4">
@@ -238,10 +254,6 @@ const statusColor: Record<string, string> = {
                   <div class="mt-3 grid gap-3">
                     <input name={`plays[${i}][play]`} type="text" placeholder="Play name" value={p.play ?? ""}
                       class="w-full border border-brand-line bg-brand-panel px-4 py-2.5 text-sm focus:border-brand-red" />
-                    <div>
-                      <label class="block text-xs font-semibold text-brand-silver">Audibles (one per line)</label>
-                      <textarea name={`plays[${i}][audibles]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.audibles)}</textarea>
-                    </div>
                     <div>
                       <p class="block text-xs font-semibold text-brand-silver">Pre-snap adjustments — by coverage (one per line, leave blank if none)</p>
                       <div class="mt-2 grid gap-3 sm:grid-cols-2">
@@ -376,8 +388,8 @@ const statusColor: Record<string, string> = {
           const lines = (a) => (Array.isArray(a) ? a.join("\n") : "");
           const f = document.getElementById("formation"); if (f) f.value = ws.formation ?? "";
           const setName = (n, v) => { const el = document.querySelector(`[name="${n}"]`); if (el) el.value = v ?? ""; };
+          const aud = document.getElementById("audibles"); if (aud) aud.value = lines(ws.audibles);
           setName("plays[0][play]", ws.play);
-          setName("plays[0][audibles]", lines(ws.audibles));
           setName("plays[0][pre_snap][any]", lines(ws.pre_snap));
           setName("plays[0][reads]", lines(ws.reads));
           setName("plays[0][notes]", ws.notes);
@@ -409,6 +421,7 @@ const statusColor: Record<string, string> = {
       const lines = (v) => String(v ?? "").split("\n").map((s) => s.trim()).filter(Boolean);
       const sendSetup = () => {
         const f = document.getElementById("formation");
+        const aud = document.getElementById("audibles");
         const playsOut = [];
         document.querySelectorAll("#plays .play-block").forEach((b) => {
           const get = (suffix) => {
@@ -422,13 +435,16 @@ const statusColor: Record<string, string> = {
           });
           playsOut.push({
             play: get("play"),
-            audibles: lines(get("audibles")),
             pre_snap: preSnap,
             reads: lines(get("reads")),
             notes: get("notes"),
           });
         });
-        send("setup", { formation: f ? f.value : "", plays: playsOut });
+        send("setup", {
+          formation: f ? f.value : "",
+          audibles: lines(aud ? aud.value : ""),
+          plays: playsOut,
+        });
       };
       ["title", "description"].forEach((fid) => {
         const el = document.getElementById(fid);

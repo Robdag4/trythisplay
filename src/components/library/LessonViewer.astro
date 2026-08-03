@@ -51,7 +51,17 @@ const normPreSnap = (v: any): Record<string, string[]> => {
 
 const rawPlays: any[] = Array.isArray(lesson?.plays) ? lesson!.plays! : [];
 const plays = rawPlays.map((p: any) => ({ ...p, pre_snap: normPreSnap(p?.pre_snap) }));
-const hasSetup = Boolean(formation || plays.length);
+
+// Formation-level audibles (their own column). Legacy per-play audibles are
+// merged in so older setups keep displaying.
+const audibles: string[] = [
+  ...new Set<string>([
+    ...(Array.isArray((lesson as any)?.audibles) ? (lesson as any).audibles : []),
+    ...plays.flatMap((p: any) => (Array.isArray(p.audibles) ? p.audibles : [])),
+  ]),
+];
+
+const hasSetup = Boolean(formation || plays.length || audibles.length);
 ---
 
 <section class="container-site grid gap-10 py-10 lg:grid-cols-[1fr_360px]">
@@ -113,21 +123,14 @@ const hasSetup = Boolean(formation || plays.length);
     {(hasSetup || isPreview) && (
       <div class={`mt-10 border-t border-brand-line pt-8 ${hasSetup ? "" : "hidden"}`} data-inside="setup-wrap">
         <h2 class="h-display text-2xl">Written Setup</h2>
-        <div class="mt-4" data-inside="setup">
+        <div class="mt-4 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_230px]">
+        <div data-inside="setup">
           {formation && (
             <p class="font-mono text-sm"><span class="text-xs uppercase tracking-wider text-brand-silver">Formation: </span>{formation}</p>
           )}
           {plays.map((p: any, i: number) => (
             <div class="mt-4 border border-brand-line p-4">
               <p class="text-xs font-bold uppercase tracking-wider text-brand-red">Play {i + 1}{p.play ? ` — ${p.play}` : ""}</p>
-              {(p.audibles ?? []).length > 0 && (
-                <div class="mt-3">
-                  <p class="text-xs font-semibold uppercase tracking-wider text-brand-silver">Audibles</p>
-                  <ul class="mt-1 space-y-1">
-                    {(p.audibles ?? []).map((a: string) => <li class="text-sm text-brand-silver">{a}</li>)}
-                  </ul>
-                </div>
-              )}
               {Object.keys(p.pre_snap).length > 0 && (
                 <div class="mt-3">
                   <p class="text-xs font-semibold uppercase tracking-wider text-brand-silver">Pre-snap adjustments</p>
@@ -159,6 +162,19 @@ const hasSetup = Boolean(formation || plays.length);
               )}
             </div>
           ))}
+        </div>
+
+        <!-- Formation audibles: their own column on the far right -->
+        {(audibles.length > 0 || isPreview) && (
+          <aside class={audibles.length ? "" : "hidden"} data-inside="audibles-wrap">
+            <div class="border border-brand-line bg-brand-panel p-4 lg:sticky lg:top-24">
+              <p class="text-xs font-semibold uppercase tracking-wider text-brand-red">Formation Audibles</p>
+              <ul class="mt-2 space-y-1.5" data-inside="audibles">
+                {audibles.map((a: string) => <li class="text-sm text-brand-silver">{a}</li>)}
+              </ul>
+            </div>
+          </aside>
+        )}
         </div>
       </div>
     )}
