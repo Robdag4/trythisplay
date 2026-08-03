@@ -5,6 +5,7 @@ import Breadcrumbs from "../ui/Breadcrumbs.astro";
 import UpdatedBadge from "../ui/UpdatedBadge.astro";
 import ProductSchema from "../seo/ProductSchema.astro";
 import { formatPrice, formatDate, capitalize } from "../../lib/format";
+import { signPlayback, muxSigningConfigured } from "../../lib/mux";
 import { marked } from "marked";
 
 interface Props {
@@ -27,6 +28,22 @@ const hasPlaybook = Boolean(data.playbook);
 const hasFormation = Boolean(data.formation);
 const hasWywl = data.whatYouWillLearn.length > 0;
 const hasWtif = data.whoThisIsFor.length > 0;
+
+// Free-preview lessons are watchable by anyone: mint signed tokens for those
+// lessons only, so the badge becomes a real inline player toggle.
+const previewTokens: Record<number, { video: string | null; thumb: string | null }> = {};
+if (muxSigningConfigured) {
+  for (let i = 0; i < data.lessons.length; i++) {
+    const l = data.lessons[i];
+    if (l.freePreview && l.playbackId) {
+      previewTokens[i] = {
+        video: await signPlayback(l.playbackId, "video", 3600),
+        thumb: await signPlayback(l.playbackId, "thumbnail", 3600),
+      };
+    }
+  }
+}
+const hasFreePreviewPlayers = Object.keys(previewTokens).length > 0;
 ---
 
 <BaseLayout
@@ -190,27 +207,54 @@ const hasWtif = data.whoThisIsFor.length > 0;
           <h2 class="h-display text-2xl">Lesson list</h2>
           <ol class="mt-5 divide-y divide-brand-line border-y border-brand-line">
             {data.lessons.map((lesson, i) => (
-              <li class="flex items-center gap-4 py-4" data-lesson-id={lesson.id}>
-                <span class="font-mono text-sm text-brand-silver">{String(i + 1).padStart(2, "0")}</span>
-                <div class="flex-1">
-                  <p class="font-semibold" data-lesson="title">{lesson.title}</p>
-                  {(lesson.description || draftPreview) && (
-                    <p class={`mt-1 text-sm text-brand-silver ${lesson.description ? "" : "hidden"}`} data-lesson="description">{lesson.description}</p>
+              <li class="py-4" data-lesson-id={lesson.id}>
+                <div class="flex items-center gap-4">
+                  <span class="font-mono text-sm text-brand-silver">{String(i + 1).padStart(2, "0")}</span>
+                  <div class="flex-1">
+                    <p class="font-semibold" data-lesson="title">{lesson.title}</p>
+                    {(lesson.description || draftPreview) && (
+                      <p class={`mt-1 text-sm text-brand-silver ${lesson.description ? "" : "hidden"}`} data-lesson="description">{lesson.description}</p>
+                    )}
+                  </div>
+                  <span class="font-mono text-xs text-brand-silver">{lesson.runtime}</span>
+                  {(lesson.freePreview || draftPreview) && (
+                    <span data-lesson="badge-free" class={lesson.freePreview ? "" : "hidden"}>
+                      {previewTokens[i]?.video ? (
+                        <button
+                          type="button"
+                          class="free-preview-toggle cursor-pointer border border-brand-red/50 bg-brand-red/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-brand-red transition-colors hover:bg-brand-red/25"
+                          data-target={`free-preview-${i}`}
+                        >
+                          ▶ Free preview
+                        </button>
+                      ) : (
+                        <span class="border border-brand-red/50 bg-brand-red/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-brand-red">
+                          Free preview
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {(!lesson.freePreview || draftPreview) && (
+                    <span data-lesson="badge-locked" class={`text-brand-silver ${lesson.freePreview ? "hidden" : ""}`} aria-label="Locked lesson" title="Unlocks after purchase">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="5" y="11" width="14" height="9" rx="1" />
+                        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                      </svg>
+                    </span>
                   )}
                 </div>
-                <span class="font-mono text-xs text-brand-silver">{lesson.runtime}</span>
-                {(lesson.freePreview || draftPreview) && (
-                  <span data-lesson="badge-free" class={`border border-brand-red/50 bg-brand-red/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-brand-red ${lesson.freePreview ? "" : "hidden"}`}>
-                    Free preview
-                  </span>
-                )}
-                {(!lesson.freePreview || draftPreview) && (
-                  <span data-lesson="badge-locked" class={`text-brand-silver ${lesson.freePreview ? "hidden" : ""}`} aria-label="Locked lesson" title="Unlocks after purchase">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <rect x="5" y="11" width="14" height="9" rx="1" />
-                      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                    </svg>
-                  </span>
+                {previewTokens[i]?.video && (
+                  <div id={`free-preview-${i}`} class="mt-4 hidden">
+                    <mux-player
+                      class="block aspect-video w-full overflow-hidden rounded border border-brand-line"
+                      playback-id={lesson.playbackId}
+                      playback-token={previewTokens[i].video}
+                      thumbnail-token={previewTokens[i].thumb || undefined}
+                      metadata-video-title={`${lesson.title} (free preview)`}
+                      accent-color="#E11D2E"
+                      stream-type="on-demand"
+                    ></mux-player>
+                  </div>
                 )}
               </li>
             ))}
@@ -255,4 +299,26 @@ const hasWtif = data.whoThisIsFor.length > 0;
       <span class="btn-secondary !py-2 cursor-not-allowed opacity-60">Coming Soon</span>
     )}
   </div>
+
+  {hasFreePreviewPlayers && (
+    <script is:inline src="https://cdn.jsdelivr.net/npm/@mux/mux-player@2"></script>
+  )}
+  {hasFreePreviewPlayers && (
+    <script is:inline>
+      // Toggle the inline free-preview player under a lesson row.
+      document.querySelectorAll(".free-preview-toggle").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const box = document.getElementById(btn.getAttribute("data-target"));
+          if (!box) return;
+          const opening = box.classList.contains("hidden");
+          box.classList.toggle("hidden");
+          if (!opening) {
+            const player = box.querySelector("mux-player");
+            if (player && typeof player.pause === "function") player.pause();
+          }
+        });
+      });
+    </script>
+  )}
 </BaseLayout>
