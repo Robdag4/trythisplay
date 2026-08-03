@@ -116,12 +116,14 @@ const normPreSnap = (v: any): Record<string, string[]> => {
         }
         plays = plays.map((p: any) => ({ ...p, pre_snap: normPreSnap(p?.pre_snap) }));
         const formation = (l.formation ?? ws.formation ?? "").trim();
-        const audibles = [
-          ...new Set<string>([
+        // NOTE: no TS generics here — inside the template the Astro compiler
+        // would parse `<string>` as a tag.
+        const audibles: string[] = [
+          ...new Set([
             ...(Array.isArray(ws.audibles) ? ws.audibles : []),
             ...plays.flatMap((p: any) => (Array.isArray(p.audibles) ? p.audibles : [])),
           ]),
-        ];
+        ] as string[];
         const hasSetup = Boolean(formation || audibles.length || plays.length);
         return (
           <div class="card p-5">
