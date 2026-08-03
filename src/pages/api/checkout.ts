@@ -8,6 +8,7 @@ export const prerender = false;
 /**
  * Creates a Stripe Checkout session for one product.
  * Price is read server-side from the catalog; the client only sends a slug.
+ * Promotion codes (created in the Stripe dashboard) can be entered at checkout.
  */
 export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
   const form = await request.formData();
@@ -28,6 +29,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     customer_email: user.email ?? undefined,
+    allow_promotion_codes: true,
     line_items: [
       {
         quantity: 1,
