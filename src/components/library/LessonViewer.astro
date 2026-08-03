@@ -32,7 +32,25 @@ const {
 const isPreview = mode === "preview";
 const lesson = ebook.data.lessons[current];
 const formation = (lesson?.formation ?? "").trim();
-const plays: any[] = Array.isArray(lesson?.plays) ? lesson!.plays! : [];
+
+// Pre-snap adjustments are organized by coverage. Legacy flat arrays are
+// shown under "Any Coverage".
+const COVERAGES = [
+  ["any", "Any Coverage"],
+  ["cover0", "Cover 0"],
+  ["cover1", "Cover 1"],
+  ["cover2", "Cover 2"],
+  ["cover3", "Cover 3"],
+  ["cover4", "Cover 4"],
+] as const;
+const normPreSnap = (v: any): Record<string, string[]> => {
+  if (Array.isArray(v)) return v.length ? { any: v } : {};
+  if (v && typeof v === "object") return v;
+  return {};
+};
+
+const rawPlays: any[] = Array.isArray(lesson?.plays) ? lesson!.plays! : [];
+const plays = rawPlays.map((p: any) => ({ ...p, pre_snap: normPreSnap(p?.pre_snap) }));
 const hasSetup = Boolean(formation || plays.length);
 ---
 
@@ -110,12 +128,17 @@ const hasSetup = Boolean(formation || plays.length);
                   </ul>
                 </div>
               )}
-              {(p.pre_snap ?? []).length > 0 && (
+              {Object.keys(p.pre_snap).length > 0 && (
                 <div class="mt-3">
                   <p class="text-xs font-semibold uppercase tracking-wider text-brand-silver">Pre-snap adjustments</p>
-                  <ul class="mt-1 space-y-1">
-                    {(p.pre_snap ?? []).map((a: string) => <li class="text-sm text-brand-silver">{a}</li>)}
-                  </ul>
+                  {COVERAGES.filter(([ck]) => (p.pre_snap[ck] ?? []).length > 0).map(([ck, clabel]) => (
+                    <div class="mt-2">
+                      <p class="text-[11px] font-bold uppercase tracking-wider text-brand-red/80">{clabel}</p>
+                      <ul class="mt-1 space-y-1">
+                        {p.pre_snap[ck].map((a: string) => <li class="text-sm text-brand-silver">{a}</li>)}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               )}
               {(p.reads ?? []).length > 0 && (

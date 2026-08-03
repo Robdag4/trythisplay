@@ -27,6 +27,22 @@ if (!lesson) return Astro.redirect(`${path}?tab=lessons`);
 let notice: string | null = null;
 let error: string | null = null;
 
+// Pre-snap adjustments are organized BY COVERAGE.
+const COVERAGES = [
+  ["any", "Any Coverage"],
+  ["cover0", "Cover 0"],
+  ["cover1", "Cover 1"],
+  ["cover2", "Cover 2"],
+  ["cover3", "Cover 3"],
+  ["cover4", "Cover 4"],
+] as const;
+// Legacy plays stored pre_snap as a flat array — treat those as "Any Coverage".
+const normPreSnap = (v: any): Record<string, string[]> => {
+  if (Array.isArray(v)) return v.length ? { any: v } : {};
+  if (v && typeof v === "object") return v;
+  return {};
+};
+
 // ── POST: save lesson meta / setup / preview toggle ─────────────────────────
 if (Astro.request.method === "POST" && editable) {
   const form = await Astro.request.formData();
@@ -54,9 +70,14 @@ if (Astro.request.method === "POST" && editable) {
       const play = String(form.get(`plays[${i}][play]`) ?? "").trim();
       const notes = String(form.get(`plays[${i}][notes]`) ?? "");
       const audibles = lines(form.get(`plays[${i}][audibles]`));
-      const pre_snap = lines(form.get(`plays[${i}][pre_snap]`));
       const reads = lines(form.get(`plays[${i}][reads]`));
-      if (play || audibles.length || pre_snap.length || reads.length || notes) {
+      // Pre-snap adjustments keyed by coverage; empty coverages are dropped.
+      const pre_snap: Record<string, string[]> = {};
+      for (const [ck] of COVERAGES) {
+        const v = lines(form.get(`plays[${i}][pre_snap][${ck}]`));
+        if (v.length) pre_snap[ck] = v;
+      }
+      if (play || audibles.length || Object.keys(pre_snap).length || reads.length || notes) {
         plays.push({ play, audibles, pre_snap, reads, notes });
       }
     });
@@ -87,7 +108,9 @@ let plays: any[] = Array.isArray(lesson.plays) && lesson.plays.length ? lesson.p
 if (!plays.length && ws.play) {
   plays = [{ play: ws.play, audibles: ws.audibles ?? [], pre_snap: ws.pre_snap ?? [], reads: ws.reads ?? [], notes: ws.notes ?? "" }];
 }
-if (!plays.length) plays = [{ play: "", audibles: [], pre_snap: [], reads: [], notes: "" }];
+if (!plays.length) plays = [{ play: "", audibles: [], pre_snap: {}, reads: [], notes: "" }];
+// Normalize legacy flat pre_snap arrays into the coverage-keyed shape.
+plays = plays.map((p) => ({ ...p, pre_snap: normPreSnap(p.pre_snap) }));
 // Signed token for the creator to preview their own uploaded video.
 const previewToken = lesson.mux_playback_id ? await signPlayback(lesson.mux_playback_id, "video", 3600) : null;
 
@@ -220,8 +243,15 @@ const statusColor: Record<string, string> = {
                       <textarea name={`plays[${i}][audibles]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.audibles)}</textarea>
                     </div>
                     <div>
-                      <label class="block text-xs font-semibold text-brand-silver">Pre-snap adjustments (one per line)</label>
-                      <textarea name={`plays[${i}][pre_snap]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.pre_snap)}</textarea>
+                      <p class="block text-xs font-semibold text-brand-silver">Pre-snap adjustments — by coverage (one per line, leave blank if none)</p>
+                      <div class="mt-2 grid gap-3 sm:grid-cols-2">
+                        {COVERAGES.map(([ck, clabel]) => (
+                          <div>
+                            <label class="block text-[11px] font-semibold uppercase tracking-wider text-brand-silver">{clabel}</label>
+                            <textarea name={`plays[${i}][pre_snap][${ck}]`} rows="2" class="mt-1 w-full border border-brand-line bg-brand-panel px-3 py-2 text-sm focus:border-brand-red">{joinLines(p.pre_snap?.[ck])}</textarea>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div>
                       <label class="block text-xs font-semibold text-brand-silver">Reads in order (one per line)</label>
@@ -348,7 +378,7 @@ const statusColor: Record<string, string> = {
           const setName = (n, v) => { const el = document.querySelector(`[name="${n}"]`); if (el) el.value = v ?? ""; };
           setName("plays[0][play]", ws.play);
           setName("plays[0][audibles]", lines(ws.audibles));
-          setName("plays[0][pre_snap]", lines(ws.pre_snap));
+          setName("plays[0][pre_snap][any]", lines(ws.pre_snap));
           setName("plays[0][reads]", lines(ws.reads));
           setName("plays[0][notes]", ws.notes);
           aiStatus.textContent = "Draft ready — review, edit, then Approve.";
@@ -385,10 +415,15 @@ const statusColor: Record<string, string> = {
             const el = b.querySelector('[name$="[' + suffix + ']"]');
             return el ? el.value : "";
           };
+          const preSnap = {};
+          ["any", "cover0", "cover1", "cover2", "cover3", "cover4"].forEach((ck) => {
+            const v = lines(get("pre_snap][" + ck));
+            if (v.length) preSnap[ck] = v;
+          });
           playsOut.push({
             play: get("play"),
             audibles: lines(get("audibles")),
-            pre_snap: lines(get("pre_snap")),
+            pre_snap: preSnap,
             reads: lines(get("reads")),
             notes: get("notes"),
           });
